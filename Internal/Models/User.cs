@@ -1,4 +1,4 @@
-﻿namespace BHYT_BE.Models
+﻿namespace BHYT_BE.Internal.Models
 {
     public class User
     {
