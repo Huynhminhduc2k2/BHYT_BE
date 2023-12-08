@@ -6,10 +6,10 @@ namespace BHYT_BE.Internal.Services.InsuranceService
 {
     public class InsuranceDTO
     {
-        public ulong InsuranceID { get; set; }
+        public int InsuranceID { get; set; }
         public string FullName { get; set; }
         public string PersonID { get; set; }
-        public string PhoneNumeber { get; set; }
+        public string PhoneNumber { get; set; }
         public DateTime DOB { get; set; }
         public string Address { get; set; }
         public string Email { get; set; }
@@ -19,7 +19,6 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     }
     public class RegisterInsuraceDTO
     {
-        public ulong InsuranceID { get; set; }
         public string FullName { get; set; }
         public string PersonID { get; set; }
         public string PhoneNumber { get; set; }
