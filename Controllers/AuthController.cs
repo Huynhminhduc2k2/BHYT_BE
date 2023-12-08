@@ -7,7 +7,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using BHYT_BE.Models;
+using BHYT_BE.Internal.Models;
 
 namespace BHYT_BE.Controllers
 {
