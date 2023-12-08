@@ -20,6 +20,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
+    // Init service and repo
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
     builder.Services.AddScoped<IInsuranceService, InsuranceService>();
 
