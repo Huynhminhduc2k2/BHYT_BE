@@ -30,7 +30,6 @@ namespace BHYT_BE.Controllers
             try
             {
                 // Tạo ID tự động (sử dụng GUID)
-                string userId = Guid.NewGuid().ToString();
 
                 // Hash mật khẩu trước khi lưu vào cơ sở dữ liệu
                 string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
@@ -38,7 +37,6 @@ namespace BHYT_BE.Controllers
                 // Tạo đối tượng User từ dữ liệu đầu vào
                 User user = new User
                 {
-                    ID = userId, // Thêm thuộc tính ID
                     Email = request.Email,
                     PasswordHash = passwordHash
                 };

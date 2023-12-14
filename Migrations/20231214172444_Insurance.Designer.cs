@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations
 {
     [DbContext(typeof(InsuranceDBContext))]
-    [Migration("20231207221235_Insurance")]
+    [Migration("20231214172444_Insurance")]
     partial class Insurance
     {
         /// <inheritdoc />

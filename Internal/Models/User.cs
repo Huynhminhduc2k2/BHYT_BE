@@ -8,8 +8,7 @@ namespace BHYT_BE.Internal.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
-        public string ID { get; internal set; }
+        public int UserID { get; set; }
         [MaxLength(64)]
         public string Email { get; set; }
 
