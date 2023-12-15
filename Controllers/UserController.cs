@@ -11,6 +11,9 @@ using System.Text;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUserService ở trong namespace này
 
+using System.Net;
+using System.Net.Mail;
+
 namespace BHYT_BE.Controllers
 {
     [Route("api/[controller]")]
@@ -104,5 +107,93 @@ namespace BHYT_BE.Controllers
 
             return jwt;
         }
+        [HttpPost("verifyOTP")]
+        public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
+        {
+            // Thực hiện xác minh mã OTP tại đây
+            // Bạn có thể kiểm tra mã OTP có hợp lệ không và thực hiện các hành động cần thiết
+
+            // Ở đây, tôi sẽ giả định mã OTP cần xác minh là "123456"
+            string expectedOTP = request.OTP;
+            System.Diagnostics.Debug.WriteLine(expectedOTP);
+            if (request.OTP == expectedOTP)
+            {
+                return Ok("OTP verified successfully.");
+            }
+            else
+            {
+                return BadRequest("Invalid OTP.");
+            }
+        }
+
+        [HttpPost("sendOTP")]
+        public ActionResult<string> SendOTP([FromBody] SendOTPRequest request)
+        {
+            // Tạo mã OTP ngẫu nhiên
+            string otp = GenerateOTP();
+
+            System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
+
+            // Gửi email
+            if (SendEmail(request.Email, otp))
+            {
+                return Ok(new { Message = "OTP sent successfully." });
+            }
+            else
+            {
+                return BadRequest(new { Message = "Failed to send OTP." });
+            }
+        }
+
+        private string GenerateOTP()
+        {
+            // Tạo mã OTP ngẫu nhiên, ví dụ: 6 chữ số
+            Random random = new Random();
+            string otp = random.Next(100000, 999999).ToString();
+            return otp;
+        }
+
+        private bool SendEmail(string toEmail, string otp)
+        {
+            try
+            {
+                // Thiết lập thông tin SMTP
+                SmtpClient client = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential("your-email@example.com", "your-email-password"),
+                    EnableSsl = true,
+                };
+
+                // Tạo nội dung email
+                MailMessage mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress("your-email@example.com");
+                mailMessage.To.Add(toEmail);
+                mailMessage.Subject = "Verification OTP";
+                mailMessage.Body = $"Your OTP is: {otp}";
+
+                // Gửi email
+                try
+                {
+                    client.Send(mailMessage);
+                    System.Diagnostics.Debug.WriteLine("Email sent successfully.");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
+                }
+
+                //client.Send(mailMessage);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi gửi email
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
     }
 }
+
