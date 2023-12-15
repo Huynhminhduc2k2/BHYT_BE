@@ -77,10 +77,6 @@ namespace BHYT_BE.Internal.Services.UserService
             return newId;
         }
 */
-        public void AddUser(UserDTO req)
-        {
-            throw new NotImplementedException();
-        }
 
         public void Create(User user)
         {
@@ -89,7 +85,21 @@ namespace BHYT_BE.Internal.Services.UserService
 
         public void AddUser(User user)
         {
-            throw new NotImplementedException();
+            try
+            {
+                // Save the user to the repository.
+                _userRepo.Create(new User
+                {
+                    Email = user.Email,
+                    PasswordHash = user.PasswordHash
+                });
+                _logger.LogInformation("User created successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating user");
+                throw;
+            }
         }
 
         public User LoginUser(string email, string passwordHash)

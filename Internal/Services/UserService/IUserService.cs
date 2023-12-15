@@ -5,7 +5,6 @@ namespace BHYT_BE.Internal.Services.UserService
 {
     public interface IUserService 
     {
-        void AddUser(UserDTO req);
 
         List<UserDTO> GetAllUsers();
 
