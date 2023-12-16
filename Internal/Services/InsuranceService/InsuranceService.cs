@@ -59,9 +59,32 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             throw new NotImplementedException();
         }
 
-        public void UpdateInsurance(InsuranceDTO insuranceDTO)
+        public void UpdateInsurance(InsuranceDTO req)
         {
-            throw new NotImplementedException();
+            try
+            {
+                Insurance insurance = new Insurance();
+                    //Address = req.Address,
+                    //DOB = req.DOB,
+                    //Nation = req.Nation,
+                    //PhoneNumeber = req.PhoneNumber,
+                    //Email = req.Email,
+                    //Sex = req.Sex,
+                    //Nationality = req.Nationality,
+                    //FullName = req.FullName,
+                    //PersonID = req.PersonID
+
+                _insuranceRepo.Create(insurance);
+
+                // Additional logic if needed
+
+                _logger.LogInformation("Insurance created successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding insurance");
+                throw; // Rethrow the exception after logging
+            }
         }
     }
 }

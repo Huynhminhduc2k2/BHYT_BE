@@ -17,7 +17,7 @@ namespace BHYT_BE.Controllers
             _service = insuranceService;
             _logger.LogInformation(1, "NLog injected into HomeController");
         }
-        [HttpPost]
+        [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
         {
@@ -48,6 +48,36 @@ namespace BHYT_BE.Controllers
             catch (Exception exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,exception.Message) ;
+            }
+        }
+
+        [HttpPost("edit")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        public IActionResult EditRegisterInsurance([FromBody] EditInsuranceRequest req)
+        {
+            try
+            {
+                _logger.LogError("Invalid request body");
+
+                _service.UpdateInsurance(new InsuranceDTO
+                {
+                    InsuranceID = req.InsuranceID,
+                    Address = req.Address,
+                    DOB = req.DOB,
+                    Email = req.Email,
+                    FullName = req.FullName,
+                    Nation = req.Nation,
+                    Nationality = req.Nationality,
+                    PersonID = req.PersonID,
+                    PhoneNumber = req.PhoneNumber,
+                    Sex = req.Sex
+                });
+
+                return Ok("Registration successful");
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
             }
         }
     }
