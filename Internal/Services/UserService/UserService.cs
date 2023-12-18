@@ -1,4 +1,5 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
+using System.Net.WebSockets;
 using User = BHYT_BE.Internal.Models.User;
 
 namespace BHYT_BE.Internal.Services.UserService
@@ -19,11 +20,23 @@ namespace BHYT_BE.Internal.Services.UserService
             throw new NotImplementedException();
         }
 
-        public Task<User> GetById(ulong id)
+        public UserDTO GetById(int id)
         {
             try
             {
-                return _userRepo.GetById(id);
+                var user = _userRepo.GetById(id);
+                if (user == null)
+                {
+                    _logger.LogInformation("User not found");
+                    return null;
+                }
+                UserDTO userDTO = new UserDTO
+                {
+                    UserID = user.UserID,
+                    Email = user.Email,
+                    PasswordHash = user.PasswordHash
+                };
+                return userDTO;
             }
             catch (Exception ex)
             {

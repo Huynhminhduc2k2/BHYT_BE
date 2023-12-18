@@ -9,7 +9,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using BHYT_BE.Internal.Models;
-using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUserService ở trong namespace này
+using BHYT_BE.Internal.Services.UserService;
+using BHYT_BE.Controllers.Types; // Thêm namespace này nếu IUserService ở trong namespace này
 
 namespace BHYT_BE.Controllers
 {
@@ -103,6 +104,24 @@ namespace BHYT_BE.Controllers
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
             return jwt;
+        }
+        [HttpGet("user")]
+        public ActionResult<UserInfo> GetUserByID([FromQuery] int id)
+        {
+            try
+            {
+                // Gọi phương thức dịch vụ để thêm User mới
+                var userDTO = _service.GetById(id);
+                UserInfo userInfo = new UserInfo
+                {
+                    Email = userDTO.Email
+                };
+                return Ok(userInfo);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
     }
 }

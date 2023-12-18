@@ -22,11 +22,12 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             return await _context.Users.ToListAsync();
         }
 
-        public async Task <User> GetById(ulong id)
+        public User GetById(int id)
         {
             if (id == 0)
             { return null; }
-            return await _context.Users.FindAsync(id);
+            var user = _context.Users.Find(id);
+            return user;
         }
 
         public async Task<User> UpdateAsync(User user)
