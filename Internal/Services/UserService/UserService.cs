@@ -115,9 +115,53 @@ namespace BHYT_BE.Internal.Services.UserService
             }
         }
 
+        public User GetByEmail(string email)
+        {
+            try
+            {
+                var user = _userRepo.GetByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogInformation($"User not found with email: {email}");
+                    return null;
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error while getting user by email: {email}");
+                throw;
+            }
+        }
+
+
+
         public User LoginUser(string email, string passwordHash)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = GetByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogInformation($"User not found with email: {email}");
+                    return null;
+                }
+
+                bool passwordMatch = BCrypt.Net.BCrypt.Verify(passwordHash, user.PasswordHash);
+                if (!passwordMatch)
+                {
+                    _logger.LogInformation($"Invalid password for user: {email}");
+                    return null;
+                }
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error while attempting login for user: {email}");
+                throw;
+            }
         }
+
     }
 }

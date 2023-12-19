@@ -4,6 +4,7 @@ using BHYT_BE.Internal.Repository.Data;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using BHYT_BE.Internal.Services.InsuranceService;
 using BHYT_BE.Internal.Services.UserService;
+using BHYT_BE.MiddlerWare;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
@@ -57,6 +58,8 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+
+    app.UseMiddleware<MiddleWare>();
 
     app.Run();
 }

@@ -22,6 +22,20 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             return await _context.Users.ToListAsync();
         }
 
+        public User GetByEmail(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return null;
+            }
+
+            // Tìm kiếm user dựa trên email bằng EF Core
+            var user = _context.Users.FirstOrDefault(u => u.Email == email.ToLower());
+
+            // Trả về user tìm thấy hoặc null nếu không tìm thấy
+            return user;
+        }
+
         public User GetById(int id)
         {
             if (id == 0)

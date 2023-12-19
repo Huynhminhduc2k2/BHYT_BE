@@ -19,11 +19,14 @@ namespace BHYT_BE.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly IConfiguration _configuration;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IConfiguration configuration)
         {
             _service = userService;
+            _configuration = configuration;
         }
+
 
         [HttpPost("register")]
         public ActionResult<User> Register(UserDTO request)
@@ -42,7 +45,6 @@ namespace BHYT_BE.Controllers
                     PasswordHash = passwordHash
                 };
 
-                // Gọi phương thức dịch vụ để thêm User mới
                 _service.AddUser(user);
 
                 return Ok(user);
@@ -58,7 +60,6 @@ namespace BHYT_BE.Controllers
         {
             try
             {
-                // Gọi phương thức dịch vụ để kiểm tra đăng nhập
                 User user = _service.LoginUser(request.Email, request.PasswordHash);
 
                 if (user == null)
@@ -80,31 +81,29 @@ namespace BHYT_BE.Controllers
         private string CreateToken(User user)
         {
             List<Claim> claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Email)
-            };
+  {
+    new Claim(ClaimTypes.Name, user.Email)
+  };
 
-            var keyBytes = new byte[64]; // 512 bits = 64 bytes - Tạo key 
+            var key = _configuration.GetValue<string>("SecretKey");
 
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                rng.GetBytes(keyBytes);
-            }
+            var keyBytes = Encoding.UTF8.GetBytes(key);
+            var symmetricKey = new SymmetricSecurityKey(keyBytes);
 
-            var key = new SymmetricSecurityKey(keyBytes);
-
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var cred = new SigningCredentials(symmetricKey, SecurityAlgorithms.HmacSha512Signature);
 
             var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred
+              claims: claims,
+              expires: DateTime.Now.AddDays(1),
+              signingCredentials: cred
             );
 
+ 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
             return jwt;
         }
+
         [HttpGet("user")]
         public ActionResult<UserInfo> GetUserByID([FromQuery] int id)
         {

@@ -10,6 +10,9 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5100"
     },
+    "JWT": {
+      "SecretKey": "BHYT"
+    },
     "https": {
       "commandName": "Project",
       "launchBrowser": true,
