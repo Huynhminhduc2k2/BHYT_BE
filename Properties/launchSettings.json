@@ -10,8 +10,11 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5100"
     },
-    "JWT": {
-      "SecretKey": "BHYT"
+    "Jwt": {
+      "Secret": "BE_So_Hard", 
+      "Issuer": "BHYT_BE", 
+      "Audience": "BHYT_BE", 
+      "ExpireDays": 1 
     },
     "https": {
       "commandName": "Project",

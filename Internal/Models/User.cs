@@ -8,14 +8,22 @@ namespace BHYT_BE.Internal.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+
         public int UserID { get; set; }
         [MaxLength(64)]
+
         public string Email { get; set; }
 
         [NotNull]
         [MaxLength(64)]
         public string PasswordHash { get; set; }
+        public UserRole Role { get; set; }
+    }
 
-        
+    public enum UserRole
+    {
+        User,
+        Admin
     }
 }
+    

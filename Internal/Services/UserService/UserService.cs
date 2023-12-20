@@ -105,7 +105,7 @@ namespace BHYT_BE.Internal.Services.UserService
                 {
                     Email = user.Email,
                     PasswordHash = user.PasswordHash
-                });
+                    });
                 _logger.LogInformation("User created successfully");
             }
             catch (Exception ex)

@@ -1,4 +1,5 @@
 ﻿using BCrypt.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -10,12 +11,13 @@ using System.Security.Cryptography;
 using System.Text;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.UserService;
-using BHYT_BE.Controllers.Types; // Thêm namespace này nếu IUserService ở trong namespace này
+using BHYT_BE.Controllers.Types;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BHYT_BE.Controllers
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
-    [ApiController]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
@@ -33,16 +35,15 @@ namespace BHYT_BE.Controllers
         {
             try
             {
-                // Tạo ID tự động (sử dụng GUID)
 
                 // Hash mật khẩu trước khi lưu vào cơ sở dữ liệu
                 string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
 
-                // Tạo đối tượng User từ dữ liệu đầu vào
                 User user = new User
                 {
                     Email = request.Email,
-                    PasswordHash = passwordHash
+                    PasswordHash = passwordHash,
+                    Role = request.Role != null ? request.Role : UserRole.User 
                 };
 
                 _service.AddUser(user);
@@ -64,10 +65,10 @@ namespace BHYT_BE.Controllers
 
                 if (user == null)
                 {
-                    return BadRequest("User not found or wrong password!");
+                    return BadRequest("User not found!");
                 }
 
-                // Tạo token cho người dùng đã đăng nhập
+                // Tạo token JWT
                 string token = CreateToken(user);
 
                 return Ok(token);
@@ -78,49 +79,67 @@ namespace BHYT_BE.Controllers
             }
         }
 
-        private string CreateToken(User user)
+        [HttpGet("protected")]
+        public IActionResult GetProtectedData()
         {
-            List<Claim> claims = new List<Claim>
-  {
-    new Claim(ClaimTypes.Name, user.Email)
-  };
+            var user = HttpContext.User.Identity;
+            if (user.IsAuthenticated)
+            {
+                // Kiểm tra xem user có phải là ClaimsPrincipal
+                if (user is ClaimsPrincipal principal)
+                {
+                    // Lấy role từ claim
+                    var role = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-            var key = _configuration.GetValue<string>("SecretKey");
-
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var symmetricKey = new SymmetricSecurityKey(keyBytes);
-
-            var cred = new SigningCredentials(symmetricKey, SecurityAlgorithms.HmacSha512Signature);
-
-            var token = new JwtSecurityToken(
-              claims: claims,
-              expires: DateTime.Now.AddDays(1),
-              signingCredentials: cred
-            );
-
- 
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
+                    // Kiểm tra role (nếu cần) và thực hiện logic phù hợp
+                    if (role == UserRole.Admin.ToString())
+                    {
+                        return Ok("Welcome Admin!");
+                    }
+                    else
+                    {
+                        return Ok("Welcome User!");
+                    }
+                }
+                else
+                {
+                    // Xử lý trường hợp user không phải là ClaimsPrincipal
+                    return Unauthorized();
+                }
+            }
+            else
+            {
+                return Unauthorized();
+            }
         }
 
-        [HttpGet("user")]
-        public ActionResult<UserInfo> GetUserByID([FromQuery] int id)
+        private string CreateToken(User user)
         {
-            try
+            // Thay đổi claim type từ Subject thành Name
+            var claims = new List<Claim>
+      {
+        new Claim(ClaimTypes.Name, user.Email)
+      };
+
+            var key = _configuration.GetValue<string>("SecretKey");
+            var keyBytes = Encoding.UTF8.GetBytes(key);
+            var securityKey = new SymmetricSecurityKey(keyBytes);
+
+            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512Signature);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                // Gọi phương thức dịch vụ để thêm User mới
-                var userDTO = _service.GetById(id);
-                UserInfo userInfo = new UserInfo
-                {
-                    Email = userDTO.Email
-                };
-                return Ok(userInfo);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
+                Subject = new ClaimsIdentity(claims),
+                Issuer = _configuration.GetValue<string>("Issuer"),
+                Audience = _configuration.GetValue<string>("Audience"),
+                Expires = DateTime.UtcNow.AddDays(_configuration.GetValue<int>("ExpireDays")),
+                SigningCredentials = creds
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
         }
     }
 }
