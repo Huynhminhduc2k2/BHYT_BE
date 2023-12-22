@@ -1,6 +1,9 @@
+using BHYT_BE.Internal.Repositories.Data;
+using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.Data;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using BHYT_BE.Internal.Services.InsuranceService;
+using BHYT_BE.Internal.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
@@ -14,15 +17,28 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     // Add services to the container.
-
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(name: "react",
+                          builder =>
+                          {
+                              builder.WithOrigins("http://localhost:3000")
+                                  .AllowAnyMethod()
+                                  .AllowAnyHeader(); ;
+                          });
+    });
     builder.Services.AddControllers();
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
+    builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     // Init service and repo
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
     builder.Services.AddScoped<IInsuranceService, InsuranceService>();
+
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IUserService, UserService>();
 
     builder.Logging.ClearProviders();
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
@@ -35,7 +51,7 @@ try
         app.UseSwagger();
         app.UseSwaggerUI();
     }
-
+    app.UseCors("react");
     app.UseHttpsRedirection();
 
     app.UseAuthorization();
