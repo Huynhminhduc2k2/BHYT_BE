@@ -57,6 +57,8 @@ namespace BHYT_BE.Controllers.Types
         public string Nationality { get; set; }
 
         public string Sex { get; set; }
+        public string Status { get; set; }
+
     }
 
 }
