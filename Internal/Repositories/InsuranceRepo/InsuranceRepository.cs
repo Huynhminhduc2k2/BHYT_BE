@@ -17,9 +17,9 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
             _context.SaveChanges();
         }
 
-        public async Task<List<Insurance>> GetAll()
+        public  List<Insurance> GetAll()
         {
-            return await _context.Insurances.ToListAsync();
+            return _context.Insurances.ToList();
         }
 
         public async Task<Insurance> GetByID(ulong id)

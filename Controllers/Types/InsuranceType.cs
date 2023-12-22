@@ -58,5 +58,9 @@ namespace BHYT_BE.Controllers.Types
 
         public string Sex { get; set; }
     }
+    public class ReturnRegister
+    {
+        public int InsuranceID { get; set; }
+    }
 
 }

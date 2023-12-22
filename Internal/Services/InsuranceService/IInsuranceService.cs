@@ -1,4 +1,5 @@
 ﻿using BHYT_BE.Controllers.Types;
+using BHYT_BE.Internal.Models;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
 {
@@ -6,7 +7,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     {
         void AddInsurance(RegisterInsuraceDTO req);
         void UpdateInsurance(InsuranceDTO insuranceDTO);
-        List<InsuranceDTO> GetAllInsurances();
+        List<Insurance> GetAllInsurances();
         InsuranceDTO GetInsuranceByID(ulong id);
         InsuranceDTO GetInsuranceByPersonID(string personID);
     }

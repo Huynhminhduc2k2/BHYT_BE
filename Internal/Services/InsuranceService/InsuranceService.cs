@@ -1,4 +1,6 @@
 ﻿using BHYT_BE.Internal.Repository.InsuranceRepo;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Collections.Generic;
 using Insurance = BHYT_BE.Internal.Models.Insurance;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
@@ -44,10 +46,23 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             }
         }
 
-        public List<InsuranceDTO> GetAllInsurances()
+        public List<Insurance> GetAllInsurances()
         {
-            throw new NotImplementedException();
-        }
+            try
+            {
+              var  Insurances = _insuranceRepo.GetAll();
+                return Insurances;
+
+                
+                _logger.LogInformation("Get Insurance successfully");
+            }
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, "Error while returning insurance: No insurance");
+                throw ex;
+                
+            }
+           }
 
         public InsuranceDTO GetInsuranceByID(ulong id)
         {
