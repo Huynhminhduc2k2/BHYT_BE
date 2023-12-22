@@ -44,8 +44,18 @@ namespace BHYT_BE.Controllers
                     PasswordHash = passwordHash
                 };
 
+                string otp = GenerateOTP();
+                SendEmail(request.Email, otp);
+
+                var response = new VerifyOTPRequest
+                {
+                    Email = request.Email,
+
+                    OTP = otp
+                };
+
                 // Gọi phương thức dịch vụ để thêm User mới
-                _service.AddUser(user);
+                //_service.AddUser(user);
 
                 return Ok(user);
             }
@@ -118,6 +128,7 @@ namespace BHYT_BE.Controllers
             System.Diagnostics.Debug.WriteLine(expectedOTP);
             if (request.OTP == expectedOTP)
             {
+                _service.AddUser(new User {Email = request.Email, PasswordHash = request.PasswordHash, OTP = expectedOTP });
                 return Ok("OTP verified successfully.");
             }
             else

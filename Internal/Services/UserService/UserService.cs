@@ -91,7 +91,8 @@ namespace BHYT_BE.Internal.Services.UserService
                 _userRepo.Create(new User
                 {
                     Email = user.Email,
-                    PasswordHash = user.PasswordHash
+                    PasswordHash = user.PasswordHash,
+                    OTP = user.OTP
                 });
                 _logger.LogInformation("User created successfully");
             }
