@@ -161,13 +161,13 @@ namespace BHYT_BE.Controllers
                 SmtpClient client = new SmtpClient("smtp.gmail.com")
                 {
                     Port = 587,
-                    Credentials = new NetworkCredential("your-email@example.com", "your-email-password"),
+                    Credentials = new NetworkCredential("huynhminhducdev@gmail.com", "qyry jthm gsou mjoc"),
                     EnableSsl = true,
                 };
 
                 // Tạo nội dung email
                 MailMessage mailMessage = new MailMessage();
-                mailMessage.From = new MailAddress("your-email@example.com");
+                mailMessage.From = new MailAddress("huynhminhducdev@gmail.com");
                 mailMessage.To.Add(toEmail);
                 mailMessage.Subject = "Verification OTP";
                 mailMessage.Body = $"Your OTP is: {otp}";

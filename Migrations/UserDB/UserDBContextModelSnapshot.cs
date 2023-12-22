@@ -34,6 +34,11 @@ namespace BHYT_BE.Migrations.UserDB
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("OTP")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(64)
