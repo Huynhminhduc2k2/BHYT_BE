@@ -7,6 +7,7 @@ using BHYT_BE.Internal.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using Stripe;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -44,7 +45,7 @@ try
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
     builder.Host.UseNLog();
     var app = builder.Build();
-
+    StripeConfiguration.ApiKey = "sk_test_51OQ6efGzNiwrigil7GWec9IUCQb1kma855hkTTx7g6XuYKY8H6gMvuRuIpq2uLgeYwov0AiI7BQsIqsPBY9Ahhve00HzncCvSr";
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
