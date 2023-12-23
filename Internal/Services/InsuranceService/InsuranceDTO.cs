@@ -16,6 +16,8 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         public string Nation { get; set; }
         public string Nationality { get; set; }
         public string Sex { get; set; }
+        public string Status { get; set; }
+
     }
     public class RegisterInsuraceDTO
     {

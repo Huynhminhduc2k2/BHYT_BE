@@ -22,13 +22,13 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
             return _context.Insurances.ToList();
         }
 
-        public async Task<Insurance> GetByID(ulong id)
+        public Insurance GetByID(int id)
         {
             if (id == 0)
             {
                 return null;
             }
-            return await _context.Insurances.FindAsync(id);
+            return _context.Insurances.Find(id);
         }
 
 
@@ -42,11 +42,18 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
             return await _context.Insurances.FirstOrDefaultAsync(insurance => insurance.PersonID == personID);
         }
 
-        public async Task<Insurance> UpdateAsync(Insurance insurance)
+        public Insurance Update(Insurance insurance)
         {
-            _context.Entry(insurance).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return await Task.FromResult(insurance);
+            try
+            {
+                var result = _context.Insurances.Update(insurance);
+                _context.SaveChanges();
+                return result.Entity;
+            } 
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

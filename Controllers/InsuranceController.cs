@@ -3,6 +3,11 @@ using BHYT_BE.Internal.Services.InsuranceService;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
 using System;
+
+
+using System.ComponentModel.DataAnnotations;
+
+
 namespace BHYT_BE.Controllers
 {
     [ApiController]
@@ -45,6 +50,10 @@ namespace BHYT_BE.Controllers
 
                 return Ok("Registration successful");
             }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (Exception exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,exception.Message) ;
@@ -73,7 +82,12 @@ namespace BHYT_BE.Controllers
             try
             {
                 _logger.LogError("Invalid request body");
-
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError("Invalid request body");
+                    return BadRequest("Invalid request body");
+                }
+                // TODO: check admin
                 _service.UpdateInsurance(new InsuranceDTO
                 {
                     InsuranceID = req.InsuranceID,
@@ -85,10 +99,51 @@ namespace BHYT_BE.Controllers
                     Nationality = req.Nationality,
                     PersonID = req.PersonID,
                     PhoneNumber = req.PhoneNumber,
-                    Sex = req.Sex
-                });
+                    Sex = req.Sex,
+                    Status = req.Status
+                }, true);
 
+                
                 return Ok("Registration successful");
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            }
+        }
+
+        [HttpPost("private/accept")]
+        public IActionResult AcceptInsurance([FromBody] int insuranceID)
+        {
+            try
+            {
+                bool accepted = _service.AcceptInsurance(insuranceID);
+                if (!accepted)
+                {
+                    return NotFound("Not found insurance");
+                }
+                return Ok("Accepted");
+            } 
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            }
+        }
+        [HttpPost("private/delince")]
+        public IActionResult RejectInsurance([FromBody] int insuranceID)
+        {
+            try
+            {
+                bool rejected = _service.RejectInsurance(insuranceID);
+                if (!rejected)
+                {
+                    return NotFound("Not found insurance");
+                }
+                return Ok("Accepted");
             }
             catch (Exception exception)
             {
