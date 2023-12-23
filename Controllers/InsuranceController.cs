@@ -3,7 +3,10 @@ using BHYT_BE.Internal.Services.InsuranceService;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
 using System;
+
+
 using System.ComponentModel.DataAnnotations;
+
 
 namespace BHYT_BE.Controllers
 {
@@ -56,6 +59,21 @@ namespace BHYT_BE.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,exception.Message) ;
             }
         }
+        [HttpGet("returnRegister")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        public IActionResult ReturnRegister( )
+        {
+            try
+            {
+               
+                return Ok(_service.GetAllInsurances());
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            }
+        }
+
 
         [HttpPost("edit")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -132,5 +150,6 @@ namespace BHYT_BE.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
             }
         }
+
     }
 }

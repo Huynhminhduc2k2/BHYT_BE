@@ -60,5 +60,9 @@ namespace BHYT_BE.Controllers.Types
         public string Status { get; set; }
 
     }
+    public class ReturnRegister
+    {
+        public int InsuranceID { get; set; }
+    }
 
 }
