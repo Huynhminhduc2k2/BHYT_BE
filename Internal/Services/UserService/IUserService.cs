@@ -15,7 +15,8 @@ namespace BHYT_BE.Internal.Services.UserService
         User LoginUser(string email, string passwordHash);
 
         User GetUserByEmail(string email);
-        void UpdateUser(User user);
+
+        User Update(User user);
 
     }
 }

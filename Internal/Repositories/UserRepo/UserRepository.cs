@@ -40,5 +40,27 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
         {
             return _context.Users.FirstOrDefault(u => u.Email == email);
         }
+
+        public User Update(User user)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Updating user with new OTP: {user.OTP}");
+
+                _context.Entry(user).State = EntityState.Modified;
+                _context.SaveChanges();
+
+                // Reload the user from the database to get the updated state
+                _context.Entry(user).Reload();
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception or log it
+                Console.WriteLine($"Error updating user: {ex.Message}");
+                throw; // Rethrow the exception if needed
+            }
+        }
     }
 }

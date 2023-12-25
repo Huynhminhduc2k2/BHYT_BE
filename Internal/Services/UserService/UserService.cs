@@ -1,4 +1,5 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
+using Microsoft.EntityFrameworkCore;
 using User = BHYT_BE.Internal.Models.User;
 
 namespace BHYT_BE.Internal.Services.UserService
@@ -114,10 +115,10 @@ namespace BHYT_BE.Internal.Services.UserService
             return _userRepo.GetUserByEmail(email);
         }
 
-        public void UpdateUser(User user)
+        public User Update(User user)
         {
-            // Gọi phương thức từ repository để cập nhật thông tin người dùng
-            _userRepo.UpdateAsync(user);
+            return _userRepo.Update(user);
         }
+
     }
 }

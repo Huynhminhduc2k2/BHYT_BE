@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations.UserDB
 {
     [DbContext(typeof(UserDBContext))]
-    [Migration("20231223175532_User")]
+    [Migration("20231225151055_User")]
     partial class User
     {
         /// <inheritdoc />

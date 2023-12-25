@@ -148,12 +148,14 @@ namespace BHYT_BE.Controllers
                 expectedOTP = cachedOTP;
             }
 
-            string expectedEmail = GetUserByEmail(request.Email);
+            User client = GetUserByEmail(request.Email);
 
             System.Diagnostics.Debug.WriteLine(expectedOTP);
-            System.Diagnostics.Debug.WriteLine(expectedEmail);
-            if (request.OTP == expectedOTP && request.Email == expectedEmail)
+            System.Diagnostics.Debug.WriteLine(client.Email);
+            if (request.OTP == expectedOTP && request.Email == client.Email)
             {
+                client.OTP = expectedOTP;
+                _service.Update(client);
                 return Ok("OTP verified successfully.");
             }
             else
@@ -162,7 +164,7 @@ namespace BHYT_BE.Controllers
             }
         }
 
-        private string GetUserByEmail(string Email)
+        private User GetUserByEmail(string Email)
         {
             try
             {
@@ -173,15 +175,15 @@ namespace BHYT_BE.Controllers
                 {
                     System.Diagnostics.Debug.WriteLine($"User with email {Email} not found.");
 
-                    return "User not found.";
+                    throw new Exception("User not found.");
                 }
 
                 System.Diagnostics.Debug.WriteLine($"User with email {Email} found.");
-                return user.Email;
+                return user;
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                throw;
             }
         }
 

@@ -10,5 +10,7 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
         Task<User> UpdateAsync(User user);
 
         User GetUserByEmail(string email);
+
+        User Update(User user);
     }
 }
