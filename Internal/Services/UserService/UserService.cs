@@ -19,11 +19,11 @@ namespace BHYT_BE.Internal.Services.UserService
             throw new NotImplementedException();
         }
 
-        public Task<User> GetById(ulong id)
+        public async Task<User> GetById(ulong id)
         {
             try
             {
-                return _userRepo.GetById(id);
+                return await _userRepo.GetById(id);
             }
             catch (Exception ex)
             {
@@ -106,6 +106,18 @@ namespace BHYT_BE.Internal.Services.UserService
         public User LoginUser(string email, string passwordHash)
         {
             throw new NotImplementedException();
+        }
+
+        public User GetUserByEmail(string email)
+        {
+            // Gọi phương thức từ repository để lấy thông tin người dùng dựa trên email
+            return _userRepo.GetUserByEmail(email);
+        }
+
+        public void UpdateUser(User user)
+        {
+            // Gọi phương thức từ repository để cập nhật thông tin người dùng
+            _userRepo.UpdateAsync(user);
         }
     }
 }

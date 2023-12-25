@@ -35,7 +35,6 @@ namespace BHYT_BE.Migrations.UserDB
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("OTP")
-                        .IsRequired()
                         .HasMaxLength(9)
                         .HasColumnType("character varying(9)");
 

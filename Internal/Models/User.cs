@@ -17,7 +17,13 @@ namespace BHYT_BE.Internal.Models
         public string PasswordHash { get; set; }
 
         [MaxLength(9)]
-        public string OTP { get; set; }
+        public string? OTP { get; set; }
         
     }
+
+    public class EmailDTO
+    {
+        public string UserEmail { get; set; }
+    }
+
 }

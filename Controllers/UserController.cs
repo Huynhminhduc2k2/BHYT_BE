@@ -13,6 +13,7 @@ using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUser
 
 using System.Net;
 using System.Net.Mail;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace BHYT_BE.Controllers
 {
@@ -21,10 +22,12 @@ namespace BHYT_BE.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly IMemoryCache _memoryCache;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IMemoryCache memoryCache)
         {
             _service = userService;
+            _memoryCache = memoryCache;
         }
 
         [HttpPost("register")]
@@ -43,19 +46,12 @@ namespace BHYT_BE.Controllers
                     Email = request.Email,
                     PasswordHash = passwordHash
                 };
+            
+                // Gọi phương thức dịch vụ để thêm User mới
+                _service.AddUser(user);
 
                 string otp = GenerateOTP();
                 SendEmail(request.Email, otp);
-
-                var response = new VerifyOTPRequest
-                {
-                    Email = request.Email,
-
-                    OTP = otp
-                };
-
-                // Gọi phương thức dịch vụ để thêm User mới
-                //_service.AddUser(user);
 
                 return Ok(user);
             }
@@ -117,31 +113,15 @@ namespace BHYT_BE.Controllers
 
             return jwt;
         }
-        [HttpPost("verifyOTP")]
-        public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
-        {
-            // Thực hiện xác minh mã OTP tại đây
-            // Bạn có thể kiểm tra mã OTP có hợp lệ không và thực hiện các hành động cần thiết
-
-            // Ở đây, tôi sẽ giả định mã OTP cần xác minh là "123456"
-            string expectedOTP = request.OTP;
-            System.Diagnostics.Debug.WriteLine(expectedOTP);
-            if (request.OTP == expectedOTP)
-            {
-                _service.AddUser(new User {Email = request.Email, PasswordHash = request.PasswordHash, OTP = expectedOTP });
-                return Ok("OTP verified successfully.");
-            }
-            else
-            {
-                return BadRequest("Invalid OTP.");
-            }
-        }
 
         [HttpPost("sendOTP")]
         public ActionResult<string> SendOTP([FromBody] SendOTPRequest request)
         {
             // Tạo mã OTP ngẫu nhiên
             string otp = GenerateOTP();
+
+            // Lưu giữ giá trị OTP vào MemoryCache với khóa là email người dùng
+            _memoryCache.Set(request.Email, otp);
 
             System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
 
@@ -155,6 +135,56 @@ namespace BHYT_BE.Controllers
                 return BadRequest(new { Message = "Failed to send OTP." });
             }
         }
+
+        [HttpPost("verifyOTP")]
+        public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
+        {
+            // Thực hiện xác minh mã OTP tại đây
+            // Bạn có thể kiểm tra mã OTP có hợp lệ không và thực hiện các hành động cần thiết
+
+            string expectedOTP = null;
+            if (_memoryCache.TryGetValue<string>(request.Email, out string cachedOTP))
+            {
+                expectedOTP = cachedOTP;
+            }
+
+            string expectedEmail = GetUserByEmail(request.Email);
+
+            System.Diagnostics.Debug.WriteLine(expectedOTP);
+            System.Diagnostics.Debug.WriteLine(expectedEmail);
+            if (request.OTP == expectedOTP && request.Email == expectedEmail)
+            {
+                return Ok("OTP verified successfully.");
+            }
+            else
+            {
+                return BadRequest("Invalid OTP.");
+            }
+        }
+
+        private string GetUserByEmail(string Email)
+        {
+            try
+            {
+                // Gọi phương thức dịch vụ để lấy người dùng theo email
+                User user = _service.GetUserByEmail(Email);
+
+                if (user == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"User with email {Email} not found.");
+
+                    return "User not found.";
+                }
+
+                System.Diagnostics.Debug.WriteLine($"User with email {Email} found.");
+                return user.Email;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
 
         private string GenerateOTP()
         {
@@ -205,6 +235,31 @@ namespace BHYT_BE.Controllers
                 return false;
             }
         }
+
+        //[HttpPost("getUserByEmail")]
+        //public ActionResult<User> GetUserByEmail([FromBody] EmailDTO request)
+        //{
+        //    try
+        //    {
+        //        // Gọi phương thức dịch vụ để lấy người dùng theo email
+        //        User user = _service.GetUserByEmail(request.UserEmail);
+
+        //        if (user == null)
+        //        {
+        //            System.Diagnostics.Debug.WriteLine($"User with email {request.UserEmail} not found.");
+                    
+        //            return NotFound("User not found.");
+        //        }
+
+        //        System.Diagnostics.Debug.WriteLine($"User with email {request.UserEmail} found.");
+        //        return Ok(user);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        //    }
+        //}
+
     }
 }
 

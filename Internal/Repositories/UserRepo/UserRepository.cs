@@ -36,5 +36,9 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             return await Task.FromResult(user);
         }
 
+        public User GetUserByEmail(string email)
+        {
+            return _context.Users.FirstOrDefault(u => u.Email == email);
+        }
     }
 }

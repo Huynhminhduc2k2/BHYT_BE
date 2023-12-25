@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations.UserDB
 {
     [DbContext(typeof(UserDBContext))]
-    [Migration("20231222182556_User")]
+    [Migration("20231223175532_User")]
     partial class User
     {
         /// <inheritdoc />
@@ -38,7 +38,6 @@ namespace BHYT_BE.Migrations.UserDB
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("OTP")
-                        .IsRequired()
                         .HasMaxLength(9)
                         .HasColumnType("character varying(9)");
 

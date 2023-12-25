@@ -19,7 +19,7 @@ namespace BHYT_BE.Migrations.UserDB
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Email = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     PasswordHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    OTP = table.Column<string>(type: "character varying(9)", maxLength: 9, nullable: false)
+                    OTP = table.Column<string>(type: "character varying(9)", maxLength: 9, nullable: true)
                 },
                 constraints: table =>
                 {
