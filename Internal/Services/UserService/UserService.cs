@@ -1,4 +1,5 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
+using Microsoft.EntityFrameworkCore;
 using User = BHYT_BE.Internal.Models.User;
 
 namespace BHYT_BE.Internal.Services.UserService
@@ -19,11 +20,11 @@ namespace BHYT_BE.Internal.Services.UserService
             throw new NotImplementedException();
         }
 
-        public Task<User> GetById(ulong id)
+        public async Task<User> GetById(ulong id)
         {
             try
             {
-                return _userRepo.GetById(id);
+                return await _userRepo.GetById(id);
             }
             catch (Exception ex)
             {
@@ -91,7 +92,8 @@ namespace BHYT_BE.Internal.Services.UserService
                 _userRepo.Create(new User
                 {
                     Email = user.Email,
-                    PasswordHash = user.PasswordHash
+                    PasswordHash = user.PasswordHash,
+                    OTP = user.OTP
                 });
                 _logger.LogInformation("User created successfully");
             }
@@ -106,5 +108,17 @@ namespace BHYT_BE.Internal.Services.UserService
         {
             throw new NotImplementedException();
         }
+
+        public User GetUserByEmail(string email)
+        {
+            // Gọi phương thức từ repository để lấy thông tin người dùng dựa trên email
+            return _userRepo.GetUserByEmail(email);
+        }
+
+        public User Update(User user)
+        {
+            return _userRepo.Update(user);
+        }
+
     }
 }
