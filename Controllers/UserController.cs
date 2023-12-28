@@ -14,6 +14,7 @@ using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUser
 using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace BHYT_BE.Controllers
 {
@@ -23,11 +24,13 @@ namespace BHYT_BE.Controllers
     {
         private readonly IUserService _service;
         private readonly IMemoryCache _memoryCache;
+        private readonly IConfiguration _configuration;
 
-        public UserController(IUserService userService, IMemoryCache memoryCache)
+        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration)
         {
             _service = userService;
             _memoryCache = memoryCache;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -52,6 +55,9 @@ namespace BHYT_BE.Controllers
 
                 string otp = GenerateOTP();
                 SendEmail(request.Email, otp);
+
+                // Lưu giữ giá trị OTP vào MemoryCache với khóa là email người dùng
+                _memoryCache.Set(request.Email, otp);
 
                 return Ok(user);
             }
@@ -114,27 +120,25 @@ namespace BHYT_BE.Controllers
             return jwt;
         }
 
-        [HttpPost("sendOTP")]
-        public ActionResult<string> SendOTP([FromBody] SendOTPRequest request)
-        {
-            // Tạo mã OTP ngẫu nhiên
-            string otp = GenerateOTP();
+        //[HttpPost("sendOTP")]
+        //public ActionResult<string> SendOTP([FromBody] SendOTPRequest request)
+        //{
+        //    // Tạo mã OTP ngẫu nhiên
+        //    string otp = GenerateOTP();
 
-            // Lưu giữ giá trị OTP vào MemoryCache với khóa là email người dùng
-            _memoryCache.Set(request.Email, otp);
+        //    // Lưu giữ giá trị OTP vào MemoryCache với khóa là email người dùng
+        //    _memoryCache.Set(request.Email, otp);
 
-            System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
-
-            // Gửi email
-            if (SendEmail(request.Email, otp))
-            {
-                return Ok(new { Message = "OTP sent successfully." });
-            }
-            else
-            {
-                return BadRequest(new { Message = "Failed to send OTP." });
-            }
-        }
+        //    // Gửi email
+        //    if (SendEmail(request.Email, otp))
+        //    {
+        //        return Ok(new { Message = "OTP sent successfully." });
+        //    }
+        //    else
+        //    {
+        //        return BadRequest(new { Message = "Failed to send OTP." });
+        //    }
+        //}
 
         [HttpPost("verifyOTP")]
         public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
@@ -193,6 +197,9 @@ namespace BHYT_BE.Controllers
             // Tạo mã OTP ngẫu nhiên, ví dụ: 6 chữ số
             Random random = new Random();
             string otp = random.Next(100000, 999999).ToString();
+            
+            System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
+
             return otp;
         }
 
@@ -200,17 +207,27 @@ namespace BHYT_BE.Controllers
         {
             try
             {
+                // Retrieve email settings from IConfiguration
+                string smtpServer = _configuration["EmailSettings:SmtpServer"];
+                int port = int.Parse(_configuration["EmailSettings:Port"]);
+                string userName = _configuration["EmailSettings:UserName"];
+                string password = _configuration["EmailSettings:Password"];
+                bool enableSsl = bool.Parse(_configuration["EmailSettings:EnableSsl"]);
+
                 // Thiết lập thông tin SMTP
-                SmtpClient client = new SmtpClient("smtp.gmail.com")
+                //SmtpClient client = new SmtpClient("smtp.gmail.com")
+                SmtpClient client = new SmtpClient(smtpServer)
                 {
-                    Port = 587,
-                    Credentials = new NetworkCredential("huynhminhducdev@gmail.com", "qyry jthm gsou mjoc"),
-                    EnableSsl = true,
+                    Port = port,
+                    //Credentials = new NetworkCredential("huynhminhducdev@gmail.com", "qyry jthm gsou mjoc"),
+                    Credentials = new NetworkCredential(userName, password),
+                    EnableSsl = enableSsl,
                 };
 
                 // Tạo nội dung email
                 MailMessage mailMessage = new MailMessage();
-                mailMessage.From = new MailAddress("huynhminhducdev@gmail.com");
+                //mailMessage.From = new MailAddress("huynhminhducdev@gmail.com");
+                mailMessage.From = new MailAddress(userName);
                 mailMessage.To.Add(toEmail);
                 mailMessage.Subject = "Verification OTP";
                 mailMessage.Body = $"Your OTP is: {otp}";
@@ -237,31 +254,6 @@ namespace BHYT_BE.Controllers
                 return false;
             }
         }
-
-        //[HttpPost("getUserByEmail")]
-        //public ActionResult<User> GetUserByEmail([FromBody] EmailDTO request)
-        //{
-        //    try
-        //    {
-        //        // Gọi phương thức dịch vụ để lấy người dùng theo email
-        //        User user = _service.GetUserByEmail(request.UserEmail);
-
-        //        if (user == null)
-        //        {
-        //            System.Diagnostics.Debug.WriteLine($"User with email {request.UserEmail} not found.");
-                    
-        //            return NotFound("User not found.");
-        //        }
-
-        //        System.Diagnostics.Debug.WriteLine($"User with email {request.UserEmail} found.");
-        //        return Ok(user);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        //    }
-        //}
-
     }
 }
 
