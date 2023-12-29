@@ -11,9 +11,9 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             _context = context;
         }
 
-        public void Create (User user)
+        public void Create(User user)
         {
-            _context.Users.Add (user);
+            _context.Users.Add(user);
             _context.SaveChanges();
         }
 
@@ -30,7 +30,7 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             }
 
             // Tìm kiếm user dựa trên email bằng EF Core
-            var user = _context.Users.FirstOrDefault(u => u.Email == email.ToLower());
+            var user = _context.Users.FirstOrDefault(u => u.Username == email.ToLower());
 
             // Trả về user tìm thấy hoặc null nếu không tìm thấy
             return user;
@@ -39,7 +39,9 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
         public User GetById(int id)
         {
             if (id == 0)
-            { return null; }
+            {
+                return null;
+            }
             var user = _context.Users.Find(id);
             return user;
         }
@@ -50,6 +52,5 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             await _context.SaveChangesAsync();
             return await Task.FromResult(user);
         }
-
     }
 }

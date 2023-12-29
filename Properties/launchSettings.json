@@ -11,10 +11,10 @@
       "applicationUrl": "http://localhost:5100"
     },
     "Jwt": {
-      "Secret": "BE_So_Hard", 
-      "Issuer": "BHYT_BE", 
-      "Audience": "BHYT_BE", 
-      "ExpireDays": 1 
+      "Key": "13038ad044808bed726bde5cc5a83a52001874fa92fc4b6aeaa704f117d029b6",
+      "Issuer": "https://localhost:7292/",
+      "Audience": "https://localhost:7292/",
+      "ExpireDays": 1
     },
     "https": {
       "commandName": "Project",

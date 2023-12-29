@@ -1,13 +1,36 @@
 ﻿using BHYT_BE.Internal.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace BHYT_BE.Internal.Services.UserService
 {
     public class UserDTO
     {
-        public int UserID { get; set; }
-        public string Email { get; set; }
-        public string PasswordHash { get; set; }
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string Username { get; set; }
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+        [Required]
+        public string[] Roles { get; set; }
 
-        public UserRole Role { get; set; }
     }
+
+    public class LoginResponseDto
+    {
+        public string token { get; set; }
+    }
+
+    public class LoginRequestDTO
+    {
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string Username { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+    }
+
+
 }

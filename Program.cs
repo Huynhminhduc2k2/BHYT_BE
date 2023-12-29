@@ -4,10 +4,13 @@ using BHYT_BE.Internal.Repository.Data;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using BHYT_BE.Internal.Services.InsuranceService;
 using BHYT_BE.Internal.Services.UserService;
-using BHYT_BE.MiddlerWare;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using NLog;
 using NLog.Web;
+using System.Text;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -44,7 +47,42 @@ try
     builder.Logging.ClearProviders();
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
     builder.Host.UseNLog();
+
+    builder.Services.AddIdentityCore<IdentityUser>().AddRoles<IdentityRole>()
+     .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("User")
+     .AddEntityFrameworkStores<AuthUserDBContext>().AddDefaultTokenProviders();
+
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        });
+
+    builder.Services.Configure<IdentityOptions>(options =>
+    {
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 6;
+        options.Password.RequiredUniqueChars = 1;
+    });
+
+
+    builder.Services.AddDbContext<AuthUserDBContext>(option =>
+     option.UseNpgsql(builder.Configuration.GetConnectionString("AuthConnection")));
+
+    builder.Services.AddScoped<ITokenRepository, JWTRepository>();
+
+
     var app = builder.Build();
+
 
     
 
@@ -58,10 +96,8 @@ try
     app.UseHttpsRedirection();
 
     app.UseAuthorization();
+    app.UseAuthentication();
 
-    app.MapControllers();
-
-    app.UseMiddleware<MiddleWare>();
 
     app.Run();
 }
