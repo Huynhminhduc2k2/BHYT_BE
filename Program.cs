@@ -10,11 +10,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NLog;
 using NLog.Web;
+using Stripe;
+using System.Text;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 
-logger.Debug("init main");
+logger.Info("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
@@ -51,18 +53,18 @@ try
     builder.Services.AddIdentityCore<IdentityUser>().AddRoles<IdentityRole>()
      .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("User")
      .AddEntityFrameworkStores<AuthUserDBContext>().AddDefaultTokenProviders();
-
+    logger.Info(builder.Configuration["Jwt:Issuer"]);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        });
+       .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+       {
+           ValidateIssuer = true,
+           ValidateAudience = true,
+           ValidateLifetime = true,
+           ValidateIssuerSigningKey = true,
+           ValidIssuer = builder.Configuration["Jwt:Issuer"],
+           ValidAudience = builder.Configuration["Jwt:Audience"],
+           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
+       });
 
     builder.Services.Configure<IdentityOptions>(options =>
     {
@@ -79,10 +81,28 @@ try
      option.UseNpgsql(builder.Configuration.GetConnectionString("AuthConnection")));
 
     builder.Services.AddScoped<ITokenRepository, JWTRepository>();
-
-
     var app = builder.Build();
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var insuranceDbContext = services.GetRequiredService<InsuranceDBContext>();
+            insuranceDbContext.Database.Migrate();
 
+            var insuranceHistoryDbContext = services.GetRequiredService<InsuranceHistoryDBContext>();
+            insuranceHistoryDbContext.Database.Migrate();
+
+            var userDbContext = services.GetRequiredService<UserDBContext>();
+            userDbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "An error occurred while applying migrations.");
+            throw;
+        }
+    }
+    StripeConfiguration.ApiKey = "sk_test_51OQ6efGzNiwrigil7GWec9IUCQb1kma855hkTTx7g6XuYKY8H6gMvuRuIpq2uLgeYwov0AiI7BQsIqsPBY9Ahhve00HzncCvSr";
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
@@ -95,6 +115,7 @@ try
     app.UseAuthorization();
     app.UseAuthentication();
 
+    app.MapControllers();
 
     app.Run();
 }
