@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NLog;
 using NLog.Web;
-using System.Text;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -36,6 +35,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
+    builder.Services.AddDbContext<InsuranceHistoryDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     // Init service and repo
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
@@ -82,9 +82,6 @@ try
 
 
     var app = builder.Build();
-
-
-    
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())

@@ -13,7 +13,7 @@ namespace BHYT_BE.Internal.Models
         public ICollection<User> Users { get; set; }  // Quan hệ ngược với User
     }
 
-    public class User
+    public class User : BaseEntity
     {
         [Key]
         public int Id { get; set; }
