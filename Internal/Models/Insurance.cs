@@ -40,8 +40,20 @@ namespace BHYT_BE.Internal.Models
         public string Status { get; set; }
     }
 
-    public class InsuranceChangeLog
+    public class InsuranceHistory : BaseEntity
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int InsuranceHistoryID { get; set; }
+        public int InsuranceID { get; set; }
+        public string OldStatus { get; set; }
+        public string NewStatus { get; set; }
+        public string Remark { get; set; }
+        public string Email { get; set; }
+        [MaxLength(64)]
+        public string CreatedBy { get; set; }
+        [MaxLength(64)]
+        public string UpdatedBy { get; set; }
 
     }
 }
