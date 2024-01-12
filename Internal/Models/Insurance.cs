@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace BHYT_BE.Internal.Models
 {
-    public class Insurance
+    public class Insurance : BaseEntity
     {
         public const string ACCEPTED = "ACCEPTED";
         public const string REJECTED = "REJECTED";
@@ -36,5 +38,10 @@ namespace BHYT_BE.Internal.Models
         public string Sex { get; set; }
         [MaxLength(50)] // ACCEPTED, REJECTED, PENDING
         public string Status { get; set; }
+    }
+
+    public class InsuranceChangeLog
+    {
+
     }
 }
