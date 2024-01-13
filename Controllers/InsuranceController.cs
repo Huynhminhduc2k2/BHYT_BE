@@ -1,5 +1,7 @@
 ﻿using BHYT_BE.Controllers.Types;
 using BHYT_BE.Internal.Services.InsuranceService;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
 using System;
@@ -9,6 +11,7 @@ namespace BHYT_BE.Controllers
 {
     [ApiController]
     [Route("/v1/api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class InsuranceController : ControllerBase
     {
         private readonly IInsuranceService _service;
