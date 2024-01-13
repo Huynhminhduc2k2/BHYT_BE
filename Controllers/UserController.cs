@@ -1,53 +1,87 @@
 ﻿using BCrypt.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using BHYT_BE.Internal.Models;
-using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUserService ở trong namespace này
-
-using System.Net;
-using System.Net.Mail;
+using BHYT_BE.Internal.Services.UserService;
+using BHYT_BE.Controllers.Types;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace BHYT_BE.Controllers
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
-    [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly IUserService _service;
+        private readonly UserManager<IdentityUser> userManager;
+        private readonly IConfiguration configuration;
 
-        public UserController(IUserService userService)
+        public UserController(UserManager<IdentityUser> userManager, IConfiguration configuration)
         {
-            _service = userService;
+            this.userManager = userManager;
+            this.configuration = configuration;
         }
 
-        [HttpPost("register")]
-        public ActionResult<User> Register(UserDTO request)
+        // API để lấy danh sách tất cả users
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            var users = userManager.Users.ToList();
+            return Ok(users);
+        }
+
+        // API để lấy thông tin chi tiết của một user
+        [HttpGet("{id}")]
+        public IActionResult GetById(Guid id)
+        {
+            var user = userManager.Users.FirstOrDefault(x => x.Id == id.ToString());
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(user);
+        }
+
+        // API để tạo một user mới
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] UserDTO userDTO)
         {
             try
             {
-                // Tạo ID tự động (sử dụng GUID)
+                // Tạo một password hash từ chuỗi plain text
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
 
-                // Hash mật khẩu trước khi lưu vào cơ sở dữ liệu
-                string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
-
-                // Tạo đối tượng User từ dữ liệu đầu vào
-                User user = new User
+                // Tạo một user mới với password hash
+                var user = new IdentityUser
                 {
-                    Email = request.Email,
+                    UserName = userDTO.Username,
                     PasswordHash = passwordHash
                 };
 
-                // Gọi phương thức dịch vụ để thêm User mới
-                _service.AddUser(user);
+                // Lưu user vào database
+                var createResult = await userManager.CreateAsync(user);
 
-                return Ok(user);
+                if (createResult.Succeeded)
+                {
+                    if (userDTO.Roles != null && userDTO.Roles.Any())
+                    {
+                        await userManager.AddToRolesAsync(user, userDTO.Roles);
+                    }
+
+                    return Ok("User was created successfully");
+                }
+
+                return BadRequest("Failed to create user");
             }
             catch (Exception ex)
             {
@@ -55,23 +89,39 @@ namespace BHYT_BE.Controllers
             }
         }
 
-        [HttpPost("login")]
-        public ActionResult<string> Login(UserDTO request)
+        // API để cập nhật thông tin của một user
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UserDTO userDTO)
         {
+            var user = await userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+            {
+                return NotFound();
+            }
+
             try
             {
-                // Gọi phương thức dịch vụ để kiểm tra đăng nhập
-                User user = _service.LoginUser(request.Email, request.PasswordHash);
+                user.UserName = userDTO.Username;
 
-                if (user == null)
+                if (!string.IsNullOrEmpty(userDTO.Password))
                 {
-                    return BadRequest("User not found or wrong password!");
+                    var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
+                    user.PasswordHash = passwordHash;
                 }
 
-                // Tạo token cho người dùng đã đăng nhập
-                string token = CreateToken(user);
+                var updateResult = await userManager.UpdateAsync(user);
 
-                return Ok(token);
+                if (updateResult.Succeeded)
+                {
+                    if (userDTO.Roles != null && userDTO.Roles.Any())
+                    {
+                        await userManager.AddToRolesAsync(user, userDTO.Roles);
+                    }
+
+                    return Ok("User was updated successfully");
+                }
+
+                return BadRequest("Failed to update user");
             }
             catch (Exception ex)
             {
@@ -79,121 +129,38 @@ namespace BHYT_BE.Controllers
             }
         }
 
-        private string CreateToken(User user)
+        // API để xóa một user
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
         {
-            List<Claim> claims = new List<Claim>
+            var user = await userManager.FindByIdAsync(id.ToString());
+            if (user == null)
             {
-                new Claim(ClaimTypes.Name, user.Email)
-            };
-
-            var keyBytes = new byte[64]; // 512 bits = 64 bytes - Tạo key 
-
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                rng.GetBytes(keyBytes);
+                return NotFound();
             }
 
-            var key = new SymmetricSecurityKey(keyBytes);
-
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred
-            );
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
-        }
-        [HttpPost("verifyOTP")]
-        public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
-        {
-            // Thực hiện xác minh mã OTP tại đây
-            // Bạn có thể kiểm tra mã OTP có hợp lệ không và thực hiện các hành động cần thiết
-
-            // Ở đây, tôi sẽ giả định mã OTP cần xác minh là "123456"
-            string expectedOTP = request.OTP;
-            System.Diagnostics.Debug.WriteLine(expectedOTP);
-            if (request.OTP == expectedOTP)
-            {
-                return Ok("OTP verified successfully.");
-            }
-            else
-            {
-                return BadRequest("Invalid OTP.");
-            }
-        }
-
-        [HttpPost("sendOTP")]
-        public ActionResult<string> SendOTP([FromBody] SendOTPRequest request)
-        {
-            // Tạo mã OTP ngẫu nhiên
-            string otp = GenerateOTP();
-
-            System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
-
-            // Gửi email
-            if (SendEmail(request.Email, otp))
-            {
-                return Ok(new { Message = "OTP sent successfully." });
-            }
-            else
-            {
-                return BadRequest(new { Message = "Failed to send OTP." });
-            }
-        }
-
-        private string GenerateOTP()
-        {
-            // Tạo mã OTP ngẫu nhiên, ví dụ: 6 chữ số
-            Random random = new Random();
-            string otp = random.Next(100000, 999999).ToString();
-            return otp;
-        }
-
-        private bool SendEmail(string toEmail, string otp)
-        {
             try
             {
-                // Thiết lập thông tin SMTP
-                SmtpClient client = new SmtpClient("smtp.gmail.com")
+                if (user.Id == HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value)
                 {
-                    Port = 587,
-                    Credentials = new NetworkCredential("your-email@example.com", "your-email-password"),
-                    EnableSsl = true,
-                };
-
-                // Tạo nội dung email
-                MailMessage mailMessage = new MailMessage();
-                mailMessage.From = new MailAddress("your-email@example.com");
-                mailMessage.To.Add(toEmail);
-                mailMessage.Subject = "Verification OTP";
-                mailMessage.Body = $"Your OTP is: {otp}";
-
-                // Gửi email
-                try
-                {
-                    client.Send(mailMessage);
-                    System.Diagnostics.Debug.WriteLine("Email sent successfully.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
+                    return BadRequest("You cannot delete yourself.");
                 }
 
-                //client.Send(mailMessage);
+                await userManager.RemoveFromRolesAsync(user, await userManager.GetRolesAsync(user));
 
-                return true;
+                var deleteResult = await userManager.DeleteAsync(user);
+
+                if (deleteResult.Succeeded)
+                {
+                    return Ok("User was deleted successfully");
+                }
+
+                return BadRequest("Failed to delete user");
             }
             catch (Exception ex)
             {
-                // Xử lý lỗi gửi email
-                Console.WriteLine(ex.Message);
-                return false;
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
     }
 }
-

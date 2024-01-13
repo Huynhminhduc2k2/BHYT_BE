@@ -5,8 +5,9 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
     public interface IUserRepository 
     {
         Task<List<User>> GetAll(); 
-        Task<User> GetById(ulong id);
+        User GetById(int id);
         void Create(User user); 
         Task<User> UpdateAsync(User user);
+        User GetByEmail(string email);
     }
 }

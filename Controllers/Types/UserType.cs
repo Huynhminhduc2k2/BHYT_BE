@@ -16,5 +16,9 @@ namespace BHYT_BE.Controllers.Types
         [Required(ErrorMessage = "Nhập lại mật khẩu là bắt buộc")]
         public string RePassword { get; set; }
     }
+    public class UserInfo
+    {
+        public string Email { get; set; }
+    }
 
 }

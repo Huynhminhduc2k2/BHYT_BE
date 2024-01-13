@@ -1,21 +1,32 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Data;
 
 namespace BHYT_BE.Internal.Models
 {
+    public class Role
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public string Name { get; set; }
+
+        public ICollection<User> Users { get; set; }  // Quan hệ ngược với User
+    }
+
     public class User : BaseEntity
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UserID { get; set; }
-        [MaxLength(64)]
-        public string Email { get; set; }
+        public int Id { get; set; }
 
-        [NotNull]
-        [MaxLength(64)]
-        public string PasswordHash { get; set; }
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string Username { get; set; }
 
-        
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+
+        [Required]
+        public ICollection<Role> Roles { get; set; }
     }
 }
