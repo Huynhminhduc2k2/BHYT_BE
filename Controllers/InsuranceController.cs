@@ -1,4 +1,5 @@
 ﻿using BHYT_BE.Controllers.Types;
+using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.InsuranceService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -35,18 +36,18 @@ namespace BHYT_BE.Controllers
                     _logger.LogError("Invalid request body");
                     return BadRequest("Invalid request body");
                 }
+                InsuranceType insuranceType;
+                if (!Enum.TryParse<InsuranceType>(req.InsuranceType, out insuranceType))
+                {
+                    _logger.LogError("Invalid insurance type");
+                    return BadRequest("Invalid insurance type");
+                }
+                //TODO: Get user id from token or orther 
                 _service.AddInsurance(new RegisterInsuraceDTO
                 {
-                    Address = req.Address,
-                    DOB = req.DOB,
-                    Email = req.Email,
-                    FullName = req.FullName,
-                    Nation = req.Nation,
-                    Nationality = req.Nationality,
-                    PersonID = req.PersonID,
-                    PhoneNumber = req.PhoneNumber,
-                    Sex = req.Sex
-                });
+                    UserID = req.UserID,
+                    Type = insuranceType,
+                }); ;
 
                 return Ok("Registration successful");
             }
@@ -73,20 +74,25 @@ namespace BHYT_BE.Controllers
                     return BadRequest("Invalid request body");
                 }
                 // TODO: check admin
+                InsuranceType insuranceType;
+                if (!Enum.TryParse<InsuranceType>(req.InsuranceType, out insuranceType))
+                {
+                    _logger.LogError("Invalid insurance type");
+                    return BadRequest("Invalid insurance type");
+                }
+                InsuranceStatus insuranceStatus;
+                if (!Enum.TryParse<InsuranceStatus>(req.Status, out insuranceStatus))
+                {
+                    _logger.LogError("Invalid insurance status");
+                    return BadRequest("Invalid insurance status");
+                }   
                 _service.UpdateInsurance(new InsuranceDTO
                 {
                     InsuranceID = req.InsuranceID,
-                    Address = req.Address,
-                    DOB = req.DOB,
-                    Email = req.Email,
-                    FullName = req.FullName,
-                    Nation = req.Nation,
-                    Nationality = req.Nationality,
-                    PersonID = req.PersonID,
-                    PhoneNumber = req.PhoneNumber,
-                    Sex = req.Sex,
-                    Status = req.Status
-                }, true);
+                    UserID = req.UserID,
+                    Type = insuranceType,
+                    Status = insuranceStatus,
+                }, true); ;
 
                 
                 return Ok("Registration successful");

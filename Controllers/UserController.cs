@@ -22,7 +22,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BHYT_BE.Controllers
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {

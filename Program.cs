@@ -37,7 +37,7 @@ try
     
     builder.Services.AddMemoryCache();
     
-    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddEndpointsApiExplorer(); 
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     builder.Services.AddDbContext<InsuranceHistoryDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));

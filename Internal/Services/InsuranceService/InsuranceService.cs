@@ -1,4 +1,5 @@
-﻿using BHYT_BE.Internal.Repository.InsuranceRepo;
+﻿using BHYT_BE.Internal.Models;
+using BHYT_BE.Internal.Repository.InsuranceRepo;
 using System.ComponentModel.DataAnnotations;
 using Insurance = BHYT_BE.Internal.Models.Insurance;
 
@@ -24,7 +25,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     return false;
                 }
-                insurance.Status = Insurance.ACCEPTED;
+                insurance.Status = InsuranceStatus.ACCEPTED;
                 insurance = _insuranceRepo.Update(insurance);
                 
                 return true;
@@ -40,22 +41,12 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         {
             try
             {
-                if (req.Sex != Insurance.FEMALE && req.Sex != Insurance.MALE)
-                {
-                    throw new ValidationException("Sex phải là FEMALE hoặc MALE");
-                }
+                // TODO: check user id
                 Insurance insurance = new Insurance
                 {
-                    Address = req.Address,
-                    DOB = req.DOB,
-                    Nation = req.Nation,
-                    PhoneNumber = req.PhoneNumber,
-                    Email = req.Email,
-                    Sex = req.Sex,
-                    Nationality = req.Nationality,
-                    FullName = req.FullName,
-                    PersonID = req.PersonID,
-                    Status = Insurance.PENDING
+                    UserID = req.UserID,
+                    InsuranceType = req.Type,
+                    Status = InsuranceStatus.PENDING
                 };
 
                 _insuranceRepo.Create(insurance);
@@ -80,7 +71,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     return false;
                 }
-                insurance.Status = Insurance.REJECTED;
+                insurance.Status = InsuranceStatus.REJECTED;
                 insurance = _insuranceRepo.Update(insurance);
 
                 return true;
@@ -112,31 +103,14 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             try
             {
                 Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID);
-                insurance.Address = req.Address;
-                insurance.DOB = req.DOB;
-                insurance.Nation = req.Nation;
-                insurance.PhoneNumber = req.PhoneNumber;
-                insurance.Email = req.Email;
-                if (req.Sex != Insurance.FEMALE && req.Sex != Insurance.MALE)
-                {
-                    throw new ValidationException("Sex phải là FEMALE hoặc MALE");
-                }
-                insurance.Sex = req.Sex;
-                insurance.Nation = req.Nation;
-                insurance.Nationality = req.Nationality;
-                insurance.FullName = req.FullName;
-                insurance.PersonID = req.PersonID;
+                // TODO: check user id 
+                insurance.UserID = req.UserID;
                 if (isAdmin)
                 {
                     insurance.Status = req.Status;
-
                 }
-
-
                 _insuranceRepo.Update(insurance);
-
                 // Additional logic if needed
-
                 _logger.LogInformation("Insurance created successfully");
             }
             catch (Exception ex)

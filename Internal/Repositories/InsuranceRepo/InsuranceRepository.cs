@@ -33,13 +33,13 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
 
 
 
-        public async Task<Insurance> GetByPersonID(string personID)
+        public async Task<Insurance> GetByUserID(int userID)
         {
-            if (personID == "")
+            if (userID == 0)
             {
                 return null;
             }
-            return await _context.Insurances.FirstOrDefaultAsync(insurance => insurance.PersonID == personID);
+            return await _context.Insurances.FirstOrDefaultAsync(insurance => insurance.UserID == userID);
         }
 
         public Insurance Update(Insurance insurance)
