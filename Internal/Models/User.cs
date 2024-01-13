@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BHYT_BE.Internal.Models
 {
-    public class User
+    public class User : BaseEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

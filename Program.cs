@@ -7,6 +7,7 @@ using BHYT_BE.Internal.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using Stripe;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -35,6 +36,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
+    builder.Services.AddDbContext<InsuranceHistoryDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DBConnection")));
     // Init service and repo
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
@@ -47,7 +49,27 @@ try
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
     builder.Host.UseNLog();
     var app = builder.Build();
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var insuranceDbContext = services.GetRequiredService<InsuranceDBContext>();
+            insuranceDbContext.Database.Migrate();
 
+            var insuranceHistoryDbContext = services.GetRequiredService<InsuranceHistoryDBContext>();
+            insuranceHistoryDbContext.Database.Migrate();
+
+            var userDbContext = services.GetRequiredService<UserDBContext>();
+            userDbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "An error occurred while applying migrations.");
+            throw;
+        }
+    }
+    StripeConfiguration.ApiKey = "sk_test_51OQ6efGzNiwrigil7GWec9IUCQb1kma855hkTTx7g6XuYKY8H6gMvuRuIpq2uLgeYwov0AiI7BQsIqsPBY9Ahhve00HzncCvSr";
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
