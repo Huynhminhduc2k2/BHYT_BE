@@ -22,6 +22,9 @@ namespace BHYT_BE.Internal.Models
         [DataType(DataType.EmailAddress)]
         public string Username { get; set; }
 
+        [MaxLength(9)]
+        public string? OTP { get; set; }
+        
         [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; }
@@ -29,4 +32,10 @@ namespace BHYT_BE.Internal.Models
         [Required]
         public ICollection<Role> Roles { get; set; }
     }
+
+    public class EmailDTO
+    {
+        public string UserEmail { get; set; }
+    }
+
 }

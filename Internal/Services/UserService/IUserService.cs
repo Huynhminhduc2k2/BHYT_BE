@@ -13,5 +13,9 @@ namespace BHYT_BE.Internal.Services.UserService
         Task<User> UpdateAsync(User user);
         void AddUser(User user);
         User LoginUser(string email, string passwordHash);
+        User GetByEmail(string email);
+
+        User Update(User user);
+
     }
 }

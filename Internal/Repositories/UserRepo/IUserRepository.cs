@@ -8,6 +8,10 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
         User GetById(int id);
         void Create(User user); 
         Task<User> UpdateAsync(User user);
+
+        User GetUserByEmail(string email);
+
+        User Update(User user);
         User GetByEmail(string email);
     }
 }

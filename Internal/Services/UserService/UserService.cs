@@ -121,5 +121,10 @@ namespace BHYT_BE.Internal.Services.UserService
         {
             throw new NotImplementedException();
         }
+
+        public User Update(User user)
+        {
+            return _userRepo.Update(user);
+        }
     }
 }
