@@ -8,13 +8,12 @@ namespace BHYT_BE.Internal.Services.UserService
 
         List<UserDTO> GetAllUsers();
 
-        Task<User> GetById(ulong id);
+        UserDTO GetById(int id);
         void Create(User user);
         Task<User> UpdateAsync(User user);
         void AddUser(User user);
         User LoginUser(string email, string passwordHash);
-
-        User GetUserByEmail(string email);
+        User GetByEmail(string email);
 
         User Update(User user);
 

@@ -1,6 +1,7 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
-using Microsoft.EntityFrameworkCore;
+using System.Net.WebSockets;
 using User = BHYT_BE.Internal.Models.User;
+using BHYT_BE.Internal.Services.UserService; // Thêm namespace này
 
 namespace BHYT_BE.Internal.Services.UserService
 {
@@ -20,11 +21,23 @@ namespace BHYT_BE.Internal.Services.UserService
             throw new NotImplementedException();
         }
 
-        public async Task<User> GetById(ulong id)
+        public UserDTO GetById(int id)
         {
             try
             {
-                return await _userRepo.GetById(id);
+                var user = _userRepo.GetById(id);
+                if (user == null)
+                {
+                    _logger.LogInformation("User not found");
+                    return null;
+                }
+                UserDTO userDTO = new UserDTO
+                {
+                    Username = user.Username, 
+                    Password = user.Password,
+                    Roles = new string[] { } 
+                };
+                return userDTO;
             }
             catch (Exception ex)
             {
@@ -33,51 +46,6 @@ namespace BHYT_BE.Internal.Services.UserService
             }
         }
 
-        /*public void AddUser(User user)
-        {
-            try
-            {
-                // Implement logic to create and persist the user based on the provided User object.
-                // This might involve generating an ID if necessary, using repositories, and handling potential errors.
-
-                // Generate a unique ID for the user.
-                ulong newId = GenerateUserId();
-
-                // Set the ID on the user object.
-                user.Id = newId;
-
-                // Save the user to the repository.
-                _userRepo.Create(user);
-                _logger.LogInformation("User created successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating user");
-                throw;
-            }
-        }
-*/
-        public Task<User> UpdateAsync(User user)
-        {
-            try
-            {
-                return _userRepo.UpdateAsync(user);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating user");
-                throw;
-            }
-        }
-
-       /* private ulong GenerateUserId()
-        {
-            // Implement logic to generate a unique ID
-            // ...
-
-            return newId;
-        }
-*/
 
         public void Create(User user)
         {
@@ -91,9 +59,8 @@ namespace BHYT_BE.Internal.Services.UserService
                 // Save the user to the repository.
                 _userRepo.Create(new User
                 {
-                    Email = user.Email,
-                    PasswordHash = user.PasswordHash,
-                    OTP = user.OTP
+                    Username = user.Username,
+                    Password = user.Password
                 });
                 _logger.LogInformation("User created successfully");
             }
@@ -104,21 +71,60 @@ namespace BHYT_BE.Internal.Services.UserService
             }
         }
 
-        public User LoginUser(string email, string passwordHash)
+        public User GetByEmail(string email)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = _userRepo.GetByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogInformation($"User not found with email: {email}");
+                    return null;
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error while getting user by email: {email}");
+                throw;
+            }
         }
 
-        public User GetUserByEmail(string email)
+        public User LoginUser(string email, string passwordHash)
         {
-            // Gọi phương thức từ repository để lấy thông tin người dùng dựa trên email
-            return _userRepo.GetUserByEmail(email);
+            try
+            {
+                var user = GetByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogInformation($"User not found with email: {email}");
+                    return null;
+                }
+
+                bool passwordMatch = BCrypt.Net.BCrypt.Verify(passwordHash, user.Password);
+                if (!passwordMatch)
+                {
+                    _logger.LogInformation($"Invalid password for user: {email}");
+                    return null;
+                }
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error while attempting login for user: {email}");
+                throw;
+            }
+        }
+
+        public Task<User> UpdateAsync(User user)
+        {
+            throw new NotImplementedException();
         }
 
         public User Update(User user)
         {
             return _userRepo.Update(user);
         }
-
     }
 }

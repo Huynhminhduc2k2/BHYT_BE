@@ -3,6 +3,7 @@ using System;
 using BHYT_BE.Internal.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations.UserDB
 {
     [DbContext(typeof(UserDBContext))]
-    partial class UserDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240112104204_UserTime")]
+    partial class UserTime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,10 +40,6 @@ namespace BHYT_BE.Migrations.UserDB
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
-
-                    b.Property<string>("OTP")
-                        .HasMaxLength(9)
-                        .HasColumnType("character varying(9)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
