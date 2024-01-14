@@ -13,7 +13,8 @@ namespace BHYT_BE.Controllers.Types
         public int UserID { get; set; }
         public string InsuranceType { get; set; }
         public string Status { get; set; }
-
+        public bool IsAdmin { get; set; }
+        public int AdminID { get; set; }
     }
 
 }

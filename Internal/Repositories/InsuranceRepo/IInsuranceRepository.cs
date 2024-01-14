@@ -1,4 +1,5 @@
-﻿using Insurance = BHYT_BE.Internal.Models.Insurance;
+﻿using BHYT_BE.Internal.Models;
+using Insurance = BHYT_BE.Internal.Models.Insurance;
 
 namespace BHYT_BE.Internal.Repository.InsuranceRepo
 {
@@ -7,8 +8,7 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
         public Task<List<Insurance>> GetAll();
         public Insurance GetByID(int id);
         public Task<Insurance> GetByUserID(int userID);
-        public void Create(Insurance insurance);
+        public Insurance Create(Insurance insurance);
         public Insurance Update(Insurance insurance);
-
     }
 }

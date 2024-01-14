@@ -1,4 +1,7 @@
-﻿using BHYT_BE.Internal.Models;
+﻿using BHYT_BE.Common.AppSetting;
+using BHYT_BE.Internal.Models;
+using BHYT_BE.Internal.Repositories.UserRepo;
+using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using System.ComponentModel.DataAnnotations;
 using Insurance = BHYT_BE.Internal.Models.Insurance;
@@ -7,11 +10,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
 {
     public class InsuranceService : IInsuranceService
     {
+        private readonly AppSettings _appSettings;
         private readonly IInsuranceRepository _insuranceRepo;
+        private readonly IInsuranceHistoryRepository _insuranceHistoryRepo;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<InsuranceService> _logger;
-
-        public InsuranceService(IInsuranceRepository insuranceRepo, ILogger<InsuranceService> logger)
+        public InsuranceService(AppSettings appSettings, IUserRepository userRepository, IInsuranceHistoryRepository insuranceHistoryRepo, IInsuranceRepository insuranceRepo, ILogger<InsuranceService> logger)
         {
+            _appSettings = appSettings;
+            _userRepository = userRepository;
+            _insuranceHistoryRepo = insuranceHistoryRepo;
             _insuranceRepo = insuranceRepo;
             _logger = logger;
         }
@@ -23,8 +31,12 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 Insurance insurance = _insuranceRepo.GetByID(insuranceID);
                 if (insurance == null)
                 {
-                    return false;
+                    throw new ValidationException("Not found insurance");
                 }
+                if (insurance.Status != InsuranceStatus.PENDING)
+                {
+                    return false;
+                }   
                 insurance.Status = InsuranceStatus.ACCEPTED;
                 insurance = _insuranceRepo.Update(insurance);
                 
@@ -46,10 +58,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     UserID = req.UserID,
                     InsuranceType = req.Type,
-                    Status = InsuranceStatus.PENDING
+                    Status = InsuranceStatus.CREATED,
                 };
 
-                _insuranceRepo.Create(insurance);
+                insurance = _insuranceRepo.Create(insurance);
+
+                UpdateInsurance(new InsuranceDTO
+                {
+                    InsuranceID = insurance.InsuranceID,
+                    Status = InsuranceStatus.WAITING_PAYMENT,
+                }, true, -1);
 
                 // Additional logic if needed
 
@@ -68,6 +86,10 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             {
                 Insurance insurance = _insuranceRepo.GetByID(insuranceID);
                 if (insurance == null)
+                {
+                    throw new ValidationException("Not found insurance");
+                }
+                if (insurance.Status != InsuranceStatus.PENDING)
                 {
                     return false;
                 }
@@ -98,18 +120,53 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             throw new NotImplementedException();
         }
 
-        public void UpdateInsurance(InsuranceDTO req, bool isAdmin)
+        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, int adminID)
         {
             try
             {
                 Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID);
-                // TODO: check user id 
-                insurance.UserID = req.UserID;
+                InsuranceStatus currentStatus = insurance.Status;
+                if (currentStatus == InsuranceStatus.REJECTED || currentStatus == InsuranceStatus.ACCEPTED)
+                {
+                    throw new ValidationException("Insurance status is not pending");
+                }
+                User user = _userRepository.GetById(req.UserID) ?? throw new ValidationException("Not found user");
+                insurance.InsuranceType = req.Type;
+                User admin = new User
+                {
+                    Username = _appSettings.SystemEmail,
+                };
                 if (isAdmin)
                 {
+                    insurance.UserID = user.Id;
+                    if (adminID != -1)
+                    {
+                        admin = _userRepository.GetById(adminID) ?? throw new Exception("Unthorization admin");
+                    }
+                    insurance.UpdatedBy = admin.Username;
                     insurance.Status = req.Status;
+                    _insuranceRepo.Update(insurance);
+                    if (req.Status != currentStatus)
+                    {
+                        _insuranceHistoryRepo.Create(new InsuranceHistory
+                        {
+                            InsuranceID = insurance.InsuranceID,
+                            OldStatus = currentStatus,
+                            NewStatus = insurance.Status,
+                            Remark = "admin update status",
+                            Email = admin.Username,
+                            CreatedBy = admin.Username,
+                            UpdatedBy = admin.Username,
+                        });
+                    }
+                    
+                } 
+                else
+                {
+                    insurance.UpdatedBy = user.Username;
+                    _insuranceRepo.Update(insurance);
                 }
-                _insuranceRepo.Update(insurance);
+                
                 // Additional logic if needed
                 _logger.LogInformation("Insurance created successfully");
             }

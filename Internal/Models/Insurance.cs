@@ -17,6 +17,7 @@ namespace BHYT_BE.Internal.Models
         CREATED,
         WAITING_PAYMENT,
         PENDING,
+        PAID,
         ACCEPTED,
         REJECTED,
     }

@@ -11,10 +11,11 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
         {
             _context = context;
         }
-        public void Create(Insurance insurance)
+        public Insurance Create(Insurance insurance)
         {
             _context.Insurances.Add(insurance);
             _context.SaveChanges();
+            return insurance;
         }
 
         public async Task<List<Insurance>> GetAll()

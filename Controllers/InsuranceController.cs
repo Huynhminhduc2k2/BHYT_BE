@@ -92,7 +92,7 @@ namespace BHYT_BE.Controllers
                     UserID = req.UserID,
                     Type = insuranceType,
                     Status = insuranceStatus,
-                }, true); ;
+                }, req.IsAdmin, req.AdminID);
 
                 
                 return Ok("Registration successful");
@@ -108,6 +108,7 @@ namespace BHYT_BE.Controllers
         }
 
         [HttpPost("private/accept")]
+        [Authorize(Roles = "Admin")]
         public IActionResult AcceptInsurance([FromBody] int insuranceID)
         {
             try
@@ -115,16 +116,21 @@ namespace BHYT_BE.Controllers
                 bool accepted = _service.AcceptInsurance(insuranceID);
                 if (!accepted)
                 {
-                    return NotFound("Not found insurance");
+                    return BadRequest("current status not pending");
                 }
                 return Ok("Accepted");
-            } 
+            }
+            catch (ValidationException ve)
+            {
+                return NotFound(ve.Message);
+            }
             catch (Exception exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
             }
         }
         [HttpPost("private/delince")]
+        [Authorize(Roles = "Admin")]
         public IActionResult RejectInsurance([FromBody] int insuranceID)
         {
             try
@@ -132,9 +138,13 @@ namespace BHYT_BE.Controllers
                 bool rejected = _service.RejectInsurance(insuranceID);
                 if (!rejected)
                 {
-                    return NotFound("Not found insurance");
+                    return BadRequest("current status not pending");
                 }
                 return Ok("Accepted");
+            }
+            catch (ValidationException ve)
+            {
+                return NotFound(ve.Message);
             }
             catch (Exception exception)
             {
