@@ -19,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using BHYT_BE.Controllers.Types;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Stripe;
 
 namespace BHYT_BE.Controllers
 {
@@ -71,7 +72,7 @@ namespace BHYT_BE.Controllers
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
 
                 // Tạo một user mới với password hash
-                var user = new IdentityUser
+                var user = new CustomUser
                 {
                     UserName = userDTO.Username,
                     PasswordHash = passwordHash

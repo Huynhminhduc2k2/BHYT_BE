@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 
 namespace BHYT_BE.Internal.Models
@@ -32,6 +33,14 @@ namespace BHYT_BE.Internal.Models
         [Required]
         public ICollection<Role> Roles { get; set; }
     }
+
+    // thay thế cho thg aspnetuser
+    public class CustomUser : IdentityUser
+{
+    
+    public string CustomField { get; set; }
+}
+
 
     public class EmailDTO
     {

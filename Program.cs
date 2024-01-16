@@ -1,5 +1,6 @@
 using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
+using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repositories.Data;
 using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.Data;
@@ -90,6 +91,9 @@ try
         options.Password.RequiredUniqueChars = 1;
     });
 
+    builder.Services.AddIdentity<CustomUser, IdentityRole>()
+    .AddEntityFrameworkStores<UserDBContext>()
+    .AddDefaultTokenProviders();
 
     builder.Services.AddDbContext<AuthUserDBContext>(option =>
      option.UseNpgsql(builder.Configuration.GetConnectionString("AuthConnection")));
