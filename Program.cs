@@ -1,5 +1,6 @@
 using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
+using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repositories.Data;
 using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.Data;
@@ -49,6 +50,7 @@ try
     
     builder.Services.AddEndpointsApiExplorer(); 
     builder.Services.AddSwaggerGen();
+    // Context
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     builder.Services.AddDbContext<InsuranceHistoryDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
@@ -63,10 +65,9 @@ try
     builder.Logging.ClearProviders();
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
     builder.Host.UseNLog();
-
-    builder.Services.AddIdentityCore<IdentityUser>().AddRoles<IdentityRole>()
-     .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("User")
-     .AddEntityFrameworkStores<AuthUserDBContext>().AddDefaultTokenProviders();
+    builder.Services.AddIdentityCore<User>().AddRoles<IdentityRole>()
+     .AddTokenProvider<DataProtectorTokenProvider<User>>("User")
+     .AddEntityFrameworkStores<UserDBContext>().AddDefaultTokenProviders();
     logger.Info(builder.Configuration["Jwt:Issuer"]);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
        .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
@@ -89,10 +90,6 @@ try
         options.Password.RequiredLength = 6;
         options.Password.RequiredUniqueChars = 1;
     });
-
-
-    builder.Services.AddDbContext<AuthUserDBContext>(option =>
-     option.UseNpgsql(builder.Configuration.GetConnectionString("AuthConnection")));
 
     builder.Services.AddScoped<ITokenRepository, JWTRepository>();
     var app = builder.Build();

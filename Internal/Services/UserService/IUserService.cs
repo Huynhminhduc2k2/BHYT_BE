@@ -8,7 +8,7 @@ namespace BHYT_BE.Internal.Services.UserService
 
         List<UserDTO> GetAllUsers();
 
-        UserDTO GetById(int id);
+        UserDTO GetById(string id);
         void Create(User user);
         Task<User> UpdateAsync(User user);
         void AddUser(User user);

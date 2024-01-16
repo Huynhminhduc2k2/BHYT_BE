@@ -26,7 +26,7 @@ namespace BHYT_BE.Internal.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int InsuranceID { get; set; }
-        public int UserID { get; set; }
+        public string UserID { get; set; }
         public InsuranceType InsuranceType { get; set; }
         [MaxLength(50)] // ACCEPTED, REJECTED, PENDING
         public InsuranceStatus Status { get; set; }

@@ -5,7 +5,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     public interface IInsuranceService
     {
         void AddInsurance(RegisterInsuraceDTO req);
-        void UpdateInsurance(InsuranceDTO insuranceDTO, bool isAdmin, int adminID);
+        void UpdateInsurance(InsuranceDTO insuranceDTO, bool isAdmin, string adminID);
         List<InsuranceDTO> GetAllInsurances();
         InsuranceDTO GetInsuranceByID(ulong id);
         InsuranceDTO GetInsuranceByPersonID(string personID);

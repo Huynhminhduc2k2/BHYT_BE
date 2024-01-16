@@ -77,7 +77,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     InsuranceID = insurance.InsuranceID,
                     Status = InsuranceStatus.WAITING_PAYMENT,
-                }, true, -1);
+                }, true, "");
 
                 // Additional logic if needed
 
@@ -130,7 +130,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             throw new NotImplementedException();
         }
 
-        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, int adminID)
+        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string adminID)
         {
             try
             {
@@ -144,16 +144,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 insurance.InsuranceType = req.Type;
                 User admin = new User
                 {
-                    Username = _appSettings.SystemEmail,
+                    UserName = _appSettings.SystemEmail,
                 };
                 if (isAdmin)
                 {
                     insurance.UserID = user.Id;
-                    if (adminID != -1)
+                    if (adminID != "")
                     {
                         admin = _userRepository.GetById(adminID) ?? throw new Exception("Unthorization admin");
                     }
-                    insurance.UpdatedBy = admin.Username;
+                    insurance.UpdatedBy = admin.UserName;
                     insurance.Status = req.Status;
                     _insuranceRepo.Update(insurance);
                     if (req.Status != currentStatus)
@@ -164,16 +164,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                             OldStatus = currentStatus,
                             NewStatus = insurance.Status,
                             Remark = "admin update status",
-                            Email = admin.Username,
-                            CreatedBy = admin.Username,
-                            UpdatedBy = admin.Username,
+                            Email = admin.UserName,
+                            CreatedBy = admin.UserName,
+                            UpdatedBy = admin.UserName,
                         });
                     }
                     
                 } 
                 else
                 {
-                    insurance.UpdatedBy = user.Username;
+                    insurance.UpdatedBy = user.Email;
                     _insuranceRepo.Update(insurance);
                 }
                 
@@ -191,8 +191,8 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         {
             var user = new User
             {
-                Username = req.Email,
-                Password = "123",
+                UserName = req.Email,
+                PasswordHash = "123",
                 Roles = { new Role { Name = "User" } },
             };
             _userRepository.Create(user);
@@ -202,11 +202,11 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 Type = req.InsuranceType,
             }); ;
             _emailAdapter.SendEmail(
-                user.Username,
+                user.UserName,
                 "BHYT - Xác nhận đăng ký bảo hiểm y tế",
                 $"Dịch vụ đã đăng ký\n" +
-                $"Tài khoản: {user.Username}\n" +
-                $"Mật khẩu: {user.Password}\n" +
+                $"Tài khoản: {user.UserName}\n" +
+                $"Mật khẩu: {user.PasswordHash}\n" +
                 $"Gói dịch vụ {req.InsuranceType}\n" +
                 $"Vui lòng xác nhận tài khoản để thanh toán và đổi mật khẩu khi đăng nhập", 
                 false);

@@ -21,7 +21,7 @@ namespace BHYT_BE.Internal.Services.UserService
             throw new NotImplementedException();
         }
 
-        public UserDTO GetById(int id)
+        public UserDTO GetById(string id)
         {
             try
             {
@@ -33,8 +33,8 @@ namespace BHYT_BE.Internal.Services.UserService
                 }
                 UserDTO userDTO = new UserDTO
                 {
-                    Username = user.Username, 
-                    Password = user.Password,
+                    Username = user.UserName, 
+                    Password = user.PasswordHash,
                     Roles = new string[] { } 
                 };
                 return userDTO;
@@ -59,8 +59,8 @@ namespace BHYT_BE.Internal.Services.UserService
                 // Save the user to the repository.
                 _userRepo.Create(new User
                 {
-                    Username = user.Username,
-                    Password = user.Password
+                    UserName = user.UserName,
+                    PasswordHash = user.PasswordHash
                 });
                 _logger.LogInformation("User created successfully");
             }
@@ -101,7 +101,7 @@ namespace BHYT_BE.Internal.Services.UserService
                     return null;
                 }
 
-                bool passwordMatch = BCrypt.Net.BCrypt.Verify(passwordHash, user.Password);
+                bool passwordMatch = BCrypt.Net.BCrypt.Verify(passwordHash, user.PasswordHash);
                 if (!passwordMatch)
                 {
                     _logger.LogInformation($"Invalid password for user: {email}");

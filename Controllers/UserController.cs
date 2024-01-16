@@ -29,10 +29,10 @@ namespace BHYT_BE.Controllers
         private readonly IUserService _service;
         private readonly IMemoryCache _memoryCache;
         private readonly IConfiguration _configuration;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
 
 
-        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<IdentityUser> userManager)
+        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<User> userManager)
         {
             _service = userService;
             _memoryCache = memoryCache;
@@ -71,10 +71,21 @@ namespace BHYT_BE.Controllers
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
 
                 // Tạo một user mới với password hash
-                var user = new IdentityUser
+                var user = new User
                 {
                     UserName = userDTO.Username,
-                    PasswordHash = passwordHash
+                    PasswordHash = passwordHash,
+                    Address = "123 duong di",
+                    FullName = "an",
+                    DOB = DateTime.Now,
+                    Email = "ducan172002@gmail.com",
+                    Nation = "VN",
+                    Nationality = "Kinh",
+                    PersonID = "11111111111111",
+                    PhoneNumber = "09033022888",
+                    Roles = { },
+                    Sex = "MALE",
+                    OTP = "123456789",
                 };
 
                 // Lưu user vào database
@@ -187,8 +198,8 @@ try
             User client = GetUserByEmail(request.Email);
 
             System.Diagnostics.Debug.WriteLine(expectedOTP);
-            System.Diagnostics.Debug.WriteLine(client.Username);
-            if (request.OTP == expectedOTP && request.Email == client.Username)
+            System.Diagnostics.Debug.WriteLine(client.UserName);
+            if (request.OTP == expectedOTP && request.Email == client.UserName)
             {
                 client.OTP = expectedOTP;
                 _service.Update(client);

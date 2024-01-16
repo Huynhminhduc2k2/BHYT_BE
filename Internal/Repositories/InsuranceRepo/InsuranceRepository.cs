@@ -34,9 +34,9 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
 
 
 
-        public async Task<Insurance> GetByUserID(int userID)
+        public async Task<Insurance> GetByUserID(string userID)
         {
-            if (userID == 0)
+            if (userID == "")
             {
                 return null;
             }
