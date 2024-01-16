@@ -1,6 +1,7 @@
 ﻿using BHYT_BE.Controllers.Types;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.InsuranceService;
+using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,9 @@ namespace BHYT_BE.Controllers
             _service = insuranceService;
             _logger.LogInformation(1, "NLog injected into HomeController");
         }
-        [HttpPost("register")]
+        [HttpPost("request")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
+        public IActionResult RequestInsurance([FromBody] RequestInsurance req)
         {
             try
             {
@@ -36,6 +37,50 @@ namespace BHYT_BE.Controllers
                     _logger.LogError("Invalid request body");
                     return BadRequest("Invalid request body");
                 }
+                InsuranceType insuranceType;
+                if (!Enum.TryParse<InsuranceType>(req.InsuranceType, out insuranceType))
+                {
+                    _logger.LogError("Invalid insurance type");
+                    return BadRequest("Invalid insurance type");
+                }
+                // TODO: add new user from request
+
+                //TODO: Send notification to email
+
+                //TODO: Add new register insurance from new user
+                _service.RequestInsurance(new RequestInsuraceDTO
+                {
+                    Email = req.Email,
+                    Address = req.Address,
+                    DOB = req.DOB,  
+                    FullName = req.FullName,
+                    Nation = req.Nation,
+                    Nationality = req.Nationality,
+                    PersonID = req.PersonID,
+                    PhoneNumber = req.PhoneNumber,
+                    Sex = req.Sex,
+                    InsuranceType = insuranceType,
+                });
+                
+                return Ok("Registration successful, please check your email register insurance");
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            }
+        }
+
+        [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
+        {
+            try
+            {
+                _logger.LogError("Invalid request body");
                 InsuranceType insuranceType;
                 if (!Enum.TryParse<InsuranceType>(req.InsuranceType, out insuranceType))
                 {
@@ -57,7 +102,7 @@ namespace BHYT_BE.Controllers
             }
             catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,exception.Message) ;
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
             }
         }
 

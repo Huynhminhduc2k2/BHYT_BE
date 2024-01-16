@@ -1,8 +1,10 @@
 ﻿using BHYT_BE.Common.AppSetting;
+using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
+using Stripe;
 using System.ComponentModel.DataAnnotations;
 using Insurance = BHYT_BE.Internal.Models.Insurance;
 
@@ -12,12 +14,20 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     {
         private readonly AppSettings _appSettings;
         private readonly IInsuranceRepository _insuranceRepo;
+        private readonly EmailAdapter _emailAdapter;
         private readonly IInsuranceHistoryRepository _insuranceHistoryRepo;
         private readonly IUserRepository _userRepository;
         private readonly ILogger<InsuranceService> _logger;
-        public InsuranceService(AppSettings appSettings, IUserRepository userRepository, IInsuranceHistoryRepository insuranceHistoryRepo, IInsuranceRepository insuranceRepo, ILogger<InsuranceService> logger)
+        public InsuranceService(
+            AppSettings appSettings,
+            EmailAdapter emailAdapter,
+            IUserRepository userRepository, 
+            IInsuranceHistoryRepository insuranceHistoryRepo, 
+            IInsuranceRepository insuranceRepo, 
+            ILogger<InsuranceService> logger)
         {
             _appSettings = appSettings;
+            _emailAdapter = emailAdapter;
             _userRepository = userRepository;
             _insuranceHistoryRepo = insuranceHistoryRepo;
             _insuranceRepo = insuranceRepo;
@@ -175,6 +185,36 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 _logger.LogError(ex, "Error while adding insurance");
                 throw; // Rethrow the exception after logging
             }
+        }
+
+        public InsuranceDTO RequestInsurance(RequestInsuraceDTO req)
+        {
+            var user = new User
+            {
+                Username = req.Email,
+                Password = "123",
+                Roles = { new Role { Name = "User" } },
+            };
+            _userRepository.Create(user);
+            AddInsurance(new RegisterInsuraceDTO
+            {
+                UserID = user.Id,
+                Type = req.InsuranceType,
+            }); ;
+            _emailAdapter.SendEmail(
+                user.Username,
+                "BHYT - Xác nhận đăng ký bảo hiểm y tế",
+                $"Dịch vụ đã đăng ký\n" +
+                $"Tài khoản: {user.Username}\n" +
+                $"Mật khẩu: {user.Password}\n" +
+                $"Gói dịch vụ {req.InsuranceType}\n" +
+                $"Vui lòng xác nhận tài khoản để thanh toán và đổi mật khẩu khi đăng nhập", 
+                false);
+            return new InsuranceDTO
+            {
+                UserID = user.Id,
+                Type = req.InsuranceType,
+            };
         }
     }
 }

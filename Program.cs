@@ -1,4 +1,5 @@
 using BHYT_BE.Common.AppSetting;
+using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Repositories.Data;
 using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.Data;
@@ -24,6 +25,12 @@ try
     var builder = WebApplication.CreateBuilder(args);
     AppSettings appSettings = new AppSettings(builder.Configuration);
     builder.Services.AddSingleton<AppSettings>(_ => appSettings);
+    builder.Services.AddSingleton<EmailAdapter>(_ => new EmailAdapter(
+        appSettings.EmailSettings.SmtpServer,
+        appSettings.EmailSettings.Port,
+        appSettings.EmailSettings.UserName,
+        appSettings.EmailSettings.Password,
+        appSettings.EmailSettings.EnableSsl));
     // Add services to the container.
     builder.Services.AddCors(options =>
     {
