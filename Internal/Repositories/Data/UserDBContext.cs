@@ -12,7 +12,9 @@ namespace BHYT_BE.Internal.Repositories.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             //builder.UseIdentityColumns();
-
+            /// Cấu hình IdentityUserRole<string>
+            builder.Entity<IdentityUserRole<string>>().ToTable("RoleUser");
+            builder.Entity<IdentityUserRole<string>>().HasKey(x => new { x.UserId, x.RoleId });
             base.OnModelCreating(builder);
 
             var readerRoleId = "4ce06a72-f8ca-44f6-b503-e18dd3a993d3";

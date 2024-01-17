@@ -57,7 +57,7 @@ try
     // Init service and repo
     builder.Services.AddScoped<IInsuranceHistoryRepository, InsuranceHistoryRepository>();
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
-    builder.Services.AddScoped<IInsuranceService, InsuranceService>();
+    /*builder.Services.AddScoped<IInsuranceService, InsuranceService>();*/
 
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IUserService, UserService>();

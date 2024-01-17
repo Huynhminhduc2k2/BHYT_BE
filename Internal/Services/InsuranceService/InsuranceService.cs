@@ -1,4 +1,4 @@
-﻿using BHYT_BE.Common.AppSetting;
+﻿/*using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repositories.UserRepo;
@@ -218,3 +218,4 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         }
     }
 }
+*/

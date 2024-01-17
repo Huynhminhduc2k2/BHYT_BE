@@ -19,10 +19,11 @@ using Microsoft.Extensions.Configuration;
 using BHYT_BE.Controllers.Types;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BHYT_BE.Controllers
 {
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+   /* [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]*/
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
@@ -30,14 +31,16 @@ namespace BHYT_BE.Controllers
         private readonly IMemoryCache _memoryCache;
         private readonly IConfiguration _configuration;
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
 
-        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<User> userManager)
+        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
         {
             _service = userService;
             _memoryCache = memoryCache;
             _configuration = configuration;
             _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         // API để lấy danh sách tất cả users
@@ -61,8 +64,10 @@ namespace BHYT_BE.Controllers
             return Ok(user);
         }
 
-        // API để tạo một user mới
-        [HttpPost]
+
+
+
+        [HttpPost("Register")]
         public async Task<IActionResult> Create([FromBody] UserDTO userDTO)
         {
             try
@@ -75,33 +80,32 @@ namespace BHYT_BE.Controllers
                 {
                     UserName = userDTO.Username,
                     PasswordHash = passwordHash,
-                    Address = "123 duong di",
-                    FullName = "an",
-                    DOB = DateTime.Now,
-                    Email = "ducan172002@gmail.com",
-                    Nation = "VN",
-                    Nationality = "Kinh",
-                    PersonID = "11111111111111",
-                    PhoneNumber = "09033022888",
-                    Roles = { },
-                    Sex = "MALE",
-                    OTP = "123456789",
+                    Address = userDTO.Address,
+                    FullName = userDTO.FullName,
+                    DOB = userDTO.DOB,
+                    Email = userDTO.Email,
+                    Nation = userDTO.Nation,
+                    Nationality = userDTO.Nationality,
+                    PersonID = userDTO.PersonID,
+                    PhoneNumber = userDTO.PhoneNumber,
+                    Sex = userDTO.Sex,
+                    OTP = GenerateOTP(),
                 };
 
-                // Lưu user vào database
-                var createResult = await _userManager.CreateAsync(user);
-                string otp = GenerateOTP();
-                SendEmail(userDTO.Username, otp);
-                if (createResult.Succeeded)
+                var createUserResult = await _userManager.CreateAsync(user, userDTO.Password);
+
+                if (createUserResult.Succeeded)
                 {
-                    if (userDTO.Roles != null && userDTO.Roles.Any())
-                    {
-                        await _userManager.AddToRolesAsync(user, userDTO.Roles);
-                    }
+                    string otp = GenerateOTP();
+                    SendEmail(userDTO.Username, otp);
                     _memoryCache.Set(userDTO.Username, otp);
+
                     return Ok("User was created successfully");
                 }
 
+                // Xử lý lỗi tạo người dùng không thành công
+                // Đây có thể là do yêu cầu mật khẩu không đủ mạnh, email không hợp lệ, v.v.
+                // Bạn có thể trả về các thông báo lỗi chi tiết nếu cần.
                 return BadRequest("Failed to create user");
             }
             catch (Exception ex)
@@ -109,6 +113,152 @@ namespace BHYT_BE.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
+
+
+
+
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
+        {
+            try
+            {
+                // Tìm người dùng theo tên đăng nhập
+                var user = await _userManager.FindByNameAsync(loginRequest.Username);
+
+                if (user != null && await _userManager.CheckPasswordAsync(user, loginRequest.Password))
+                {
+                    // Đăng nhập thành công
+
+                    // Tạo token JWT
+                    var token = GenerateJwtToken(user);
+
+                    // Gửi token về client
+                    var response = new LoginResponseDto
+                    {
+                        token = token
+                    };
+
+                    return Ok(response);
+                }
+
+                // Đăng nhập không thành công
+                return Unauthorized("Invalid username or password");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            // Tạo Claims
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.UserName)
+        // Bạn có thể thêm các Claims khác tùy thuộc vào yêu cầu của bạn
+    };
+
+            // Tạo key từ Secret
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]));
+
+            // Tạo SigningCredentials
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // Tạo token
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddDays(Convert.ToDouble(_configuration["Jwt:ExpireDays"])),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
+        [Authorize]
+        [HttpGet("GetCurrentUser")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                // Lấy thông tin người dùng từ Claims
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (userId == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Tìm người dùng theo ID
+                var user = await _userManager.FindByIdAsync(userId);
+
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Trả về thông tin người dùng
+                return Ok(new
+                {
+                    user.UserName,
+                    user.Email,
+                    user.FullName,
+                    // Thêm các thông tin khác của người dùng nếu cần
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+
+        [HttpPost("AssignRoleByEmail")]
+        public async Task<IActionResult> AssignRoleByEmail([FromBody] EmailDTO emailDTO)
+        {
+            try
+            {
+                // Tìm người dùng theo email
+                var user = await _userManager.FindByEmailAsync(emailDTO.UserEmail);
+
+                if (user == null)
+                {
+                    return NotFound($"User with email {emailDTO.UserEmail} not found.");
+                }
+
+                // Kiểm tra xem vai trò "User" đã tồn tại hay chưa
+                var defaultRole = "User";
+                var roleExists = await _roleManager.RoleExistsAsync(defaultRole);
+
+                if (!roleExists)
+                {
+                    // Nếu vai trò chưa tồn tại, tạo mới
+                    await _roleManager.CreateAsync(new IdentityRole(defaultRole));
+                }
+
+                // Gán vai trò "User" cho người dùng
+                var result = await _userManager.AddToRoleAsync(user, defaultRole);
+
+                if (result.Succeeded)
+                {
+                    return Ok($"User {user.UserName} assigned to role {defaultRole} successfully.");
+                }
+                else
+                {
+                    return BadRequest("Failed to assign role to user.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
 
         // API để cập nhật thông tin của một user
         [HttpPut("{id}")]
