@@ -5,6 +5,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BHYT_BE.Internal.Models
 {
+    public enum UserRole
+    {
+        ADMIN,
+        USER,
+    }
     public class User : IdentityUser
     {
         [MaxLength(64)]
@@ -31,6 +36,8 @@ namespace BHYT_BE.Internal.Models
 
         [MaxLength(9)]
         public string? OTP { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
     public class EmailDTO

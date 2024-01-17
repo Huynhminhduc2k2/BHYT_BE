@@ -1,22 +1,34 @@
-﻿namespace BHYT_BE.Common.AppSetting
+﻿using BHYT_BE.Internal.Adapter;
+using Stripe;
+
+namespace BHYT_BE.Common.AppSetting
 {
     public class AppSettings
     {
-        public AppSettings(IConfiguration configuration)
+        private readonly WebApplicationBuilder _builder;
+
+        public AppSettings(WebApplicationBuilder builder)
         {
-            Logging = new Logging();
-            AllowedHosts = new List<string> { };
-            ConnectionStrings = new ConnectionStrings();
-            EmailSettings = new EmailSettings();
-            Jwt = new Jwt();
-            SystemEmail = "";
-            configuration.GetSection("Logging").Bind(Logging);
-            configuration.GetSection("AllowedHosts").Bind(AllowedHosts);
-            configuration.GetSection("ConnectionStrings").Bind(ConnectionStrings);
-            configuration.GetSection("EmailSettings").Bind(EmailSettings);
-            configuration.GetSection("Jwt").Bind(Jwt);
-            configuration.GetSection("SystemEmail").Bind(SystemEmail);
+            _builder = builder;
+            Logging = _builder.Configuration.GetSection("Logging").Get<Logging>() ?? new Logging();
+            AllowedHosts = _builder.Configuration.GetSection("AllowedHosts").Get<List<string>>() ?? new List<string>();
+            ConnectionStrings = _builder.Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>() ?? new ConnectionStrings();
+            EmailSettings = _builder.Configuration.GetSection("EmailSettings").Get<EmailSettings>() ?? new EmailSettings();
+            Jwt = _builder.Configuration.GetSection("Jwt").Get<Jwt>() ?? new Jwt();
+            SystemEmail = _builder.Configuration.GetValue<string>("SystemEmail") ?? "";
+            ConfigureServices();
         }
+
+        private void ConfigureServices()
+        {
+            _builder.Services.Configure<Logging>(_builder.Configuration.GetSection("Logging"));
+            _builder.Services.Configure<List<string>>(_builder.Configuration.GetSection("AllowedHosts"));
+            _builder.Services.Configure<ConnectionStrings>(_builder.Configuration.GetSection("ConnectionStrings"));
+            _builder.Services.Configure<EmailSettings>(_builder.Configuration.GetSection("EmailSettings"));
+            _builder.Services.Configure<Jwt>(_builder.Configuration.GetSection("Jwt"));
+            _builder.Services.Configure<string>(_builder.Configuration.GetSection("SystemEmail"));
+        }
+
         public Logging Logging { get; set; }
         public List<string> AllowedHosts { get; set; }
         public ConnectionStrings ConnectionStrings { get; set; }

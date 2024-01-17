@@ -3,41 +3,39 @@ using BHYT_BE.Internal.Models;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.AspNetCore.Identity;
 using System.Reflection.Emit;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BHYT_BE.Internal.Repositories.Data
 {
-    public class UserDBContext : DbContext
+    public class UserDBContext : IdentityDbContext<User>
     {
         public UserDBContext(DbContextOptions<UserDBContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             //builder.UseIdentityColumns();
             /// Cấu hình IdentityUserRole<string>
-            builder.Entity<IdentityUserRole<string>>().ToTable("RoleUser");
-            builder.Entity<IdentityUserRole<string>>().HasKey(x => new { x.UserId, x.RoleId });
             base.OnModelCreating(builder);
-
-            var readerRoleId = "4ce06a72-f8ca-44f6-b503-e18dd3a993d3";
-            var writerRoleId = "b10fe295-610d-4fcd-8d37-f2c1d7c9e01a";
-
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                var tableName = entityType.GetTableName();
+                if (tableName.StartsWith("AspNet"))
+                {
+                    entityType.SetTableName(tableName.Substring(6));
+                }
+            }
             var roles = new List<IdentityRole>()
             {
                 new IdentityRole()
                 {
-                    Id = readerRoleId,
-                    ConcurrencyStamp = readerRoleId,
-                    Name = "Reader",
-                    NormalizedName = "Reader".ToUpper()
+                    Name = "Admin",
+                    NormalizedName = "admin".ToUpper()
                 },
                 new IdentityRole()
                 {
-                    Id = writerRoleId,
-                    ConcurrencyStamp = writerRoleId,
-                    Name = "Writer",
-                    NormalizedName = "Writer".ToUpper()
+                    Name = "user",
+                    NormalizedName = "user".ToUpper()
                 }
             };
-
             builder.Entity<IdentityRole>().HasData(roles);
         }
         public DbSet<User> Users { get; set; }
@@ -56,7 +54,7 @@ namespace BHYT_BE.Internal.Repositories.Data
         private void AddTimestamps()
         {
             var entities = ChangeTracker.Entries()
-                .Where(x => x.Entity is BaseEntity && (x.State == EntityState.Added || x.State == EntityState.Modified));
+                .Where(x => x.Entity is User && (x.State == EntityState.Added || x.State == EntityState.Modified));
 
             foreach (var entity in entities)
             {
@@ -64,9 +62,9 @@ namespace BHYT_BE.Internal.Repositories.Data
 
                 if (entity.State == EntityState.Added)
                 {
-                    ((BaseEntity)entity.Entity).CreatedAt = now;
+                    ((User)entity.Entity).CreatedAt = now;
                 }
-                ((BaseEntity)entity.Entity).UpdatedAt = now;
+                ((User)entity.Entity).UpdatedAt = now;
             }
         }
     }

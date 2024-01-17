@@ -64,9 +64,6 @@ namespace BHYT_BE.Controllers
             return Ok(user);
         }
 
-
-
-
         [HttpPost("Register")]
         public async Task<IActionResult> Create([FromBody] UserDTO userDTO)
         {
@@ -96,13 +93,17 @@ namespace BHYT_BE.Controllers
 
                 if (createUserResult.Succeeded)
                 {
-                    string otp = GenerateOTP();
-                    SendEmail(userDTO.Username, otp);
-                    _memoryCache.Set(userDTO.Username, otp);
-
-                    return Ok("User was created successfully");
+                    var currentUser = await _userManager.FindByEmailAsync(user.Email);
+                    var roleresult = await _userManager.AddToRoleAsync(currentUser, UserRole.USER.ToString().ToLower());
+                    if (roleresult.Succeeded)
+                    {
+                        string otp = GenerateOTP();
+                        SendEmail(userDTO.Username, otp);
+                        _memoryCache.Set(userDTO.Username, otp);
+                        return Ok("User was created successfully");
+                    } //await SignInAsync(user, isPersistent: false);
                 }
-
+                
                 // Xử lý lỗi tạo người dùng không thành công
                 // Đây có thể là do yêu cầu mật khẩu không đủ mạnh, email không hợp lệ, v.v.
                 // Bạn có thể trả về các thông báo lỗi chi tiết nếu cần.
