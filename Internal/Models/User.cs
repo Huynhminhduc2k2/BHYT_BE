@@ -1,14 +1,22 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.VisualBasic;
 using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BHYT_BE.Internal.Models
 {
-    public enum UserRole
+    public class Role
     {
-        ADMIN,
-        USER,
+        public const string ADMIN = "ADMIN";
+        public const string USER = "USER";
+    }
+    public class Sex
+    {
+        public const string MALE = "MALE";
+        public const string FEMALE = "FEMALE";
+        public const string OTHER = "OTHER";
     }
     public class User : IdentityUser
     {

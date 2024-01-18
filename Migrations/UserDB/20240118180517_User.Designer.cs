@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations.UserDB
 {
     [DbContext(typeof(UserDBContext))]
-    [Migration("20240117211447_User")]
+    [Migration("20240118180517_User")]
     partial class User
     {
         /// <inheritdoc />
@@ -160,14 +160,14 @@ namespace BHYT_BE.Migrations.UserDB
                     b.HasData(
                         new
                         {
-                            Id = "8e722d50-d988-47cf-8d07-d639e90588f6",
-                            Name = "Admin",
+                            Id = "0897e507-3232-4750-b209-aa33e2e04a83",
+                            Name = "ADMIN",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = "650aa780-836c-448b-833b-155560f6398a",
-                            Name = "user",
+                            Id = "8f527a96-5961-4b7b-97d0-41250c8aef4c",
+                            Name = "USER",
                             NormalizedName = "USER"
                         });
                 });

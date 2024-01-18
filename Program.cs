@@ -7,6 +7,7 @@ using BHYT_BE.Internal.Repository.Data;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using BHYT_BE.Internal.Services.InsuranceService;
+using BHYT_BE.Internal.Services.MapperService;
 using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -25,10 +26,13 @@ logger.Info("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    AppSettings appSettings = new AppSettings(builder);
+    builder.Services.AddOptions();
+    AppSettings appSettings = new AppSettings();
+    builder.Configuration.Bind(appSettings);
+    builder.Services.AddAutoMapper(typeof(UserMapperService));
     // Add services to the container.
     builder.Services.AddSingleton<AppSettings>(_ => appSettings);
-    builder.Services.AddSingleton<IEmailAdapter, EmailAdapter>();
+    builder.Services.AddTransient<IEmailAdapter, EmailAdapter>();
 
     builder.Services.AddCors(options =>
     {
@@ -54,7 +58,7 @@ try
     // Init service and repo
     builder.Services.AddScoped<IInsuranceHistoryRepository, InsuranceHistoryRepository>();
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
-    /*builder.Services.AddScoped<IInsuranceService, InsuranceService>();*/
+    builder.Services.AddScoped<IInsuranceService, InsuranceService>();
 
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IUserService, UserService>();

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations
 {
     [DbContext(typeof(InsuranceDBContext))]
-    [Migration("20240113170742_Insurance")]
+    [Migration("20240118201016_Insurance")]
     partial class Insurance
     {
         /// <inheritdoc />
@@ -37,7 +37,6 @@ namespace BHYT_BE.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
@@ -52,12 +51,12 @@ namespace BHYT_BE.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("integer");
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("InsuranceID");
 

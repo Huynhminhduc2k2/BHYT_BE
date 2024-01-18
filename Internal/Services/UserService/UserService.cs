@@ -1,24 +1,38 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
 using System.Net.WebSockets;
 using User = BHYT_BE.Internal.Models.User;
-using BHYT_BE.Internal.Services.UserService; // Thêm namespace này
+using BHYT_BE.Internal.Services.UserService;
+using Microsoft.AspNetCore.Identity;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore; // Thêm namespace này
 
 namespace BHYT_BE.Internal.Services.UserService
 {
     public class UserService : IUserService
     {
+        private readonly UserManager<User> _userManager;
         private readonly IUserRepository _userRepo;
         private readonly ILogger<UserService> _logger;
-
-        public UserService(IUserRepository userRepo, ILogger<UserService> logger)
+        private readonly IMapper _mapper;
+        public UserService(IMapper mapper, UserManager<User> userManager, IUserRepository userRepo, ILogger<UserService> logger)
         {
+            _userManager = userManager;
             _userRepo = userRepo;
             _logger = logger;
+            _mapper = mapper;
         }
 
-        public List<UserDTO> GetAllUsers()
+        public async Task<List<UserDTO>> GetAllUsersAsync()
         {
-            throw new NotImplementedException();
+            var users = await _userManager.Users.ToListAsync();
+            List<UserDTO> userDTOs = new List<UserDTO>();
+            foreach (var user in users)
+            {
+                var userDTO = _mapper.Map<UserDTO>(user);
+                userDTO.Roles = (List<string>)await _userManager.GetRolesAsync(user);
+                userDTOs.Add(userDTO);
+            }
+            return userDTOs;
         }
 
         public UserDTO GetById(string id)
@@ -33,9 +47,9 @@ namespace BHYT_BE.Internal.Services.UserService
                 }
                 UserDTO userDTO = new UserDTO
                 {
-                    Username = user.UserName, 
+                    UserName = user.UserName, 
                     Password = user.PasswordHash,
-                    Roles = new string[] { } 
+                    Roles = (List<string>)_userManager.GetRolesAsync(user).Result
                 };
                 return userDTO;
             }
@@ -45,43 +59,48 @@ namespace BHYT_BE.Internal.Services.UserService
                 throw;
             }
         }
-
-
-        public void Create(User user)
+        public async Task<IdentityResult> CreateUser(UserDTO req, string otp)
         {
-            throw new NotImplementedException();
-        }
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(req.Password);
+            var user = new User
+            {
+                UserName = req.UserName,
+                PasswordHash = passwordHash,
+                Address = req.Address,
+                FullName = req.FullName,
+                DOB = req.DOB,
+                Email = req.Email,
+                Nation = req.Nation,
+                Nationality = req.Nationality,
+                PersonID = req.PersonID,
+                PhoneNumber = req.PhoneNumber,
+                Sex = req.Sex,
+                OTP = otp,
+            };
+            var createUserResult = await _userManager.CreateAsync(user, passwordHash); 
+            if (!createUserResult.Succeeded)
+            {
+                return createUserResult;
 
-        public void AddUser(User user)
+            }
+            var currentUser = await _userManager.FindByEmailAsync(req.Email);
+            var roleresult = await _userManager.AddToRolesAsync(currentUser, req.Roles);
+            return roleresult;
+        }
+        public async Task<UserDTO> GetUserByEmail(string email)
         {
             try
             {
-                // Save the user to the repository.
-                _userRepo.Create(new User
-                {
-                    UserName = user.UserName,
-                    PasswordHash = user.PasswordHash
-                });
-                _logger.LogInformation("User created successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating user");
-                throw;
-            }
-        }
-
-        public User GetByEmail(string email)
-        {
-            try
-            {
-                var user = _userRepo.GetByEmail(email);
+                var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
                     _logger.LogInformation($"User not found with email: {email}");
                     return null;
                 }
-                return user;
+                return new UserDTO
+                {
+
+                };
             }
             catch (Exception ex)
             {
@@ -94,7 +113,7 @@ namespace BHYT_BE.Internal.Services.UserService
         {
             try
             {
-                var user = GetByEmail(email);
+                var user = _userManager.FindByEmailAsync(email).Result;
                 if (user == null)
                 {
                     _logger.LogInformation($"User not found with email: {email}");

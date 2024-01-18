@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BHYT_BE.Migrations.InsuranceHistoryDB
 {
     /// <inheritdoc />
-    public partial class InsuranceHistory : Migration
+    public partial class InsuranceHitory : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,12 +19,12 @@ namespace BHYT_BE.Migrations.InsuranceHistoryDB
                     InsuranceHistoryID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     InsuranceID = table.Column<int>(type: "integer", nullable: false),
-                    OldStatus = table.Column<string>(type: "text", nullable: false),
-                    NewStatus = table.Column<string>(type: "text", nullable: false),
-                    Remark = table.Column<string>(type: "text", nullable: false),
-                    Email = table.Column<string>(type: "text", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    OldStatus = table.Column<int>(type: "integer", nullable: false),
+                    NewStatus = table.Column<int>(type: "integer", nullable: false),
+                    Remark = table.Column<string>(type: "text", nullable: true),
+                    Email = table.Column<string>(type: "text", nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

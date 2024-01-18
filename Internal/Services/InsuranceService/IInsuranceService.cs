@@ -11,6 +11,6 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         InsuranceDTO GetInsuranceByPersonID(string personID);
         bool AcceptInsurance(int insuranceID);
         bool RejectInsurance(int insuranceID);
-        InsuranceDTO RequestInsurance(RequestInsuraceDTO req);
+        Task<InsuranceDTO> RequestInsuranceAsync(RequestInsuraceDTO req);
     }
 }

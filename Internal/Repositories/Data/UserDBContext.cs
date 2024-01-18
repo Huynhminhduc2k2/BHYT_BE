@@ -12,8 +12,6 @@ namespace BHYT_BE.Internal.Repositories.Data
         public UserDBContext(DbContextOptions<UserDBContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            //builder.UseIdentityColumns();
-            /// Cấu hình IdentityUserRole<string>
             base.OnModelCreating(builder);
             foreach (var entityType in builder.Model.GetEntityTypes())
             {
@@ -27,13 +25,13 @@ namespace BHYT_BE.Internal.Repositories.Data
             {
                 new IdentityRole()
                 {
-                    Name = "Admin",
-                    NormalizedName = "admin".ToUpper()
+                    Name = "ADMIN",
+                    NormalizedName = "ADMIN"
                 },
                 new IdentityRole()
                 {
-                    Name = "user",
-                    NormalizedName = "user".ToUpper()
+                    Name = "USER",
+                    NormalizedName = "USER"
                 }
             };
             builder.Entity<IdentityRole>().HasData(roles);

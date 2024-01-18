@@ -26,7 +26,8 @@ namespace BHYT_BE.Controllers
         }
         [HttpPost("request")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public IActionResult RequestInsurance([FromBody] RequestInsurance req)
+        [AllowAnonymous]
+        public async Task<IActionResult> RequestInsuranceAsync([FromBody] RequestInsurance req)
         {
             try
             {
@@ -34,8 +35,14 @@ namespace BHYT_BE.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogError("Invalid request body");
-                    return BadRequest("Invalid request body");
+                    // Log each model state error
+                    var errList = new List<string>();
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        _logger.LogError($"ModelState error: {error.ErrorMessage}");
+                        errList.Add(error.ErrorMessage);
+                    }
+                    return BadRequest($"Invalid request body, err={errList.ToList()}");
                 }
                 InsuranceType insuranceType;
                 if (!Enum.TryParse<InsuranceType>(req.InsuranceType, out insuranceType))
@@ -48,7 +55,7 @@ namespace BHYT_BE.Controllers
                 //TODO: Send notification to email
 
                 //TODO: Add new register insurance from new user
-                _service.RequestInsurance(new RequestInsuraceDTO
+                await _service.RequestInsuranceAsync(new RequestInsuraceDTO
                 {
                     Email = req.Email,
                     Address = req.Address,

@@ -30,11 +30,15 @@ namespace BHYT_BE.Internal.Adapter
 
         // mailSetting được Inject qua dịch vụ hệ thống
         // Có inject Logger để xuất log
-        public EmailAdapter(IOptions<MailSettings> _mailSettings, ILogger<EmailAdapter> _logger)
+        public EmailAdapter(AppSettings appSettings, ILogger<EmailAdapter> _logger)
         {
-            mailSettings = _mailSettings.Value;
+            mailSettings = new MailSettings();
+            mailSettings.Mail = appSettings.EmailSettings.UserName;
+            mailSettings.Password = appSettings.EmailSettings.Password;
+            mailSettings.Port = appSettings.EmailSettings.Port;
+            mailSettings.Host = appSettings.EmailSettings.SmtpServer;
+            mailSettings.DisplayName = appSettings.EmailSettings.Name;
             logger = _logger;
-            logger.LogInformation("Create SendMailService");
         }
 
         public async Task SendEmailAsync(string email, string subject, string body, bool isHTML)

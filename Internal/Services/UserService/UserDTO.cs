@@ -1,52 +1,27 @@
-﻿using System;
+﻿using BHYT_BE.Internal.Models;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace BHYT_BE.Internal.Services.UserService
 {
     public class UserDTO
     {
-        [Required]
-        [DataType(DataType.EmailAddress)]
-        public string Username { get; set; }
-
-        [Required]
-        [DataType(DataType.Password)]
+        public string UserID { get; set; }
+        public string UserName { get; set; }
         public string Password { get; set; }
-
-        // Thêm thuộc tính để lưu danh sách vai trò
-        [Required]
-        public string[] Roles { get; set; }
-
-        [Required]
-        [EmailAddress]
+        public List<string> Roles { get; set; }
         public string Email { get; set; }
-
-        [Required]
         public string FullName { get; set; }
-
-        [Required]
         public string PersonID { get; set; }
-
-        [Required]
         public string Address { get; set; }
-
-        [Required]
         public DateTime DOB { get; set; }
-
-        [Required]
         public string Nation { get; set; }
-
-        [Required]
         public string Nationality { get; set; }
-
-        [Required]
-        [MaxLength(10)]
         public string Sex { get; set; }
-
-        [Required]
-        [Phone]
         public string PhoneNumber { get; set; }
- 
+        public string OTP { get; set; }
+
     }
 
     public class LoginResponseDto

@@ -1,29 +1,23 @@
-﻿using BCrypt.Net;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUserService ở trong namespace này
-using System.Net;
-using System.Net.Mail;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using BHYT_BE.Controllers.Types;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using BHYT_BE.Internal.Adapter;
+using BHYT_BE.Helper;
+using BHYT_BE.Controllers.Types;
+using AutoMapper;
+using System.Net;
+using System.Web;
 
 namespace BHYT_BE.Controllers
 {
-   /* [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]*/
+    /* [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]*/
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
@@ -32,22 +26,29 @@ namespace BHYT_BE.Controllers
         private readonly IConfiguration _configuration;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IEmailAdapter _emailAdapter;
+        private readonly ILogger<UserController> _logger;
+        private readonly IMapper _mapper;
 
 
-        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+        public UserController(IMapper mapper, IEmailAdapter emailApdater,IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ILogger<UserController> logger)
         {
+            _emailAdapter = emailApdater;
             _service = userService;
             _memoryCache = memoryCache;
             _configuration = configuration;
             _userManager = userManager;
             _roleManager = roleManager;
+            _logger = logger;
+            _mapper = mapper;
         }
 
         // API để lấy danh sách tất cả users
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var users = _userManager.Users.ToList();
+            var userDTOs = await _service.GetAllUsersAsync();
+            var users = _mapper.Map<List<UserInfoResponse>>(userDTOs);
             return Ok(users);
         }
 
@@ -65,60 +66,66 @@ namespace BHYT_BE.Controllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Create([FromBody] UserDTO userDTO)
+        public async Task<IActionResult> Register([FromBody] Register req)
         {
             try
             {
-                // Tạo một password hash từ chuỗi plain text
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
-
-                // Tạo một user mới với password hash
-                var user = new User
+                if (!ModelState.IsValid)
                 {
-                    UserName = userDTO.Username,
-                    PasswordHash = passwordHash,
-                    Address = userDTO.Address,
-                    FullName = userDTO.FullName,
-                    DOB = userDTO.DOB,
-                    Email = userDTO.Email,
-                    Nation = userDTO.Nation,
-                    Nationality = userDTO.Nationality,
-                    PersonID = userDTO.PersonID,
-                    PhoneNumber = userDTO.PhoneNumber,
-                    Sex = userDTO.Sex,
-                    OTP = GenerateOTP(),
-                };
-
-                var createUserResult = await _userManager.CreateAsync(user, userDTO.Password);
-
-                if (createUserResult.Succeeded)
-                {
-                    var currentUser = await _userManager.FindByEmailAsync(user.Email);
-                    var roleresult = await _userManager.AddToRoleAsync(currentUser, UserRole.USER.ToString().ToLower());
-                    if (roleresult.Succeeded)
+                    // Log each model state error
+                    var errList = new List<string>();
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
                     {
-                        string otp = GenerateOTP();
-                        SendEmail(userDTO.Username, otp);
-                        _memoryCache.Set(userDTO.Username, otp);
-                        return Ok("User was created successfully");
-                    } //await SignInAsync(user, isPersistent: false);
+                        _logger.LogError($"ModelState error: {error.ErrorMessage}");
+                        errList.Add(error.ErrorMessage);
+                    }
+                    return BadRequest($"Invalid request body, err={errList.ToList()}");
                 }
-                
-                // Xử lý lỗi tạo người dùng không thành công
-                // Đây có thể là do yêu cầu mật khẩu không đủ mạnh, email không hợp lệ, v.v.
-                // Bạn có thể trả về các thông báo lỗi chi tiết nếu cần.
-                return BadRequest("Failed to create user");
+                if (!ConstantHelper.AreValidValues<Role>(req.Roles))
+                {
+                    _logger.LogError("Invalid role");
+                    return BadRequest("Invalid role");
+                }
+                if (!ConstantHelper.IsValidValue<Sex>(req.Sex))
+                {
+                    _logger.LogError("Invalid sex");
+                    return BadRequest("Invalid sex");
+                }
+                if (!req.Password.Equals(req.RePassword)) { 
+                    _logger.LogError("Password and RePassword are not the same");
+                    return BadRequest("Password and RePassword are not the same"); 
+                }
+                string otp = GenerateOTP();
+                var result = await _service.CreateUser(new UserDTO
+                {
+                    UserName = req.UserName,
+                    Password = req.Password,
+                    Address = req.Address,
+                    FullName = req.FullName,
+                    DOB = req.DOB,
+                    Email = req.Email,
+                    Nation = req.Nation,
+                    Nationality = req.Nationality,
+                    PersonID = req.PersonID,
+                    PhoneNumber = req.PhoneNumber,
+                    Sex = req.Sex,
+                    Roles = req.Roles,
+                }, otp); ;
+
+                if (result.Succeeded)
+                {
+                    await _emailAdapter.SendEmailAsync(req.Email, "Verification OTP", $"Your OTP is: {otp}", false);
+                    _memoryCache.Set(req.UserName, otp);
+                    return Ok("User was created successfully");
+                }
+                return BadRequest(error: $"Failed to create user, err = {result.Errors.ToList()}");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.ToString());
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-
-
-
-
-
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
@@ -157,11 +164,11 @@ namespace BHYT_BE.Controllers
         {
             // Tạo Claims
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, user.Id),
-        new Claim(ClaimTypes.Name, user.UserName)
-        // Bạn có thể thêm các Claims khác tùy thuộc vào yêu cầu của bạn
-    };
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName)
+                // Bạn có thể thêm các Claims khác tùy thuộc vào yêu cầu của bạn
+            };
 
             // Tạo key từ Secret
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]));
@@ -273,7 +280,7 @@ namespace BHYT_BE.Controllers
 
             try
             {
-                user.UserName = userDTO.Username;
+                user.UserName = userDTO.UserName;
 
                 if (!string.IsNullOrEmpty(userDTO.Password))
                 {
@@ -367,7 +374,7 @@ try
             try
             {
                 // Gọi phương thức dịch vụ để lấy người dùng theo email
-                User user = _service.GetByEmail(Email);
+                User user = _userManager.FindByEmailAsync(Email).Result;
 
                 if (user == null)
                 {
@@ -396,54 +403,28 @@ try
 
             return otp;
         }
-
-        private bool SendEmail(string toEmail, string otp)
+        [HttpGet("Confirm")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string token, string userId)
         {
-            try
+            if (token == null || token == null)
             {
-                // Retrieve email settings from IConfiguration
-                string smtpServer = _configuration["EmailSettings:SmtpServer"];
-                int port = int.Parse(_configuration["EmailSettings:Port"]);
-                string userName = _configuration["EmailSettings:UserName"];
-                string password = _configuration["EmailSettings:Password"];
-                bool enableSsl = bool.Parse(_configuration["EmailSettings:EnableSsl"]);
-
-                // Thiết lập thông tin SMTP
-                //SmtpClient client = new SmtpClient("smtp.gmail.com")
-                SmtpClient client = new SmtpClient(smtpServer)
-                {
-                    Port = port,
-                    //Credentials = new NetworkCredential("huynhminhducdev@gmail.com", "qyry jthm gsou mjoc"),
-                    Credentials = new NetworkCredential(userName, password),
-                    EnableSsl = enableSsl,
-                };
-
-                // Tạo nội dung email
-                MailMessage mailMessage = new MailMessage();
-                //mailMessage.From = new MailAddress("huynhminhducdev@gmail.com");
-                mailMessage.From = new MailAddress(userName);
-                mailMessage.To.Add(toEmail);
-                mailMessage.Subject = "Verification OTP";
-                mailMessage.Body = $"Your OTP is: {otp}";
-
-                // Gửi email
-                try
-                {
-                    client.Send(mailMessage);
-                    System.Diagnostics.Debug.WriteLine("Email sent successfully.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
-                }
-                return true;
-            } 
-            catch (Exception ex)
-            {
-                // Xử lý lỗi gửi email
-                Console.WriteLine(ex.Message);
-                return false;
+                return BadRequest("The link is Invalid or Expired");
             }
+            //Find the User By Id
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogError($"The User ID {userId} is Invalid");
+                return NotFound("User not found");
+            }
+            //Call the ConfirmEmailAsync Method which will mark the Email as Confirmed
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (result.Succeeded)
+            {
+                return Ok("Thank you for confirming your email");
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, "Confirm account failed");
         }
     }
 }

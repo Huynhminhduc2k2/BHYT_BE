@@ -174,8 +174,8 @@ namespace BHYT_BE.Migrations.UserDB
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "650aa780-836c-448b-833b-155560f6398a", null, "user", "USER" },
-                    { "8e722d50-d988-47cf-8d07-d639e90588f6", null, "Admin", "ADMIN" }
+                    { "0897e507-3232-4750-b209-aa33e2e04a83", null, "ADMIN", "ADMIN" },
+                    { "8f527a96-5961-4b7b-97d0-41250c8aef4c", null, "USER", "USER" }
                 });
 
             migrationBuilder.CreateIndex(
