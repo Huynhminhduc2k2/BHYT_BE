@@ -2,7 +2,7 @@
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.InsuranceService;
 using BHYT_BE.Internal.Services.UserService;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.  JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
