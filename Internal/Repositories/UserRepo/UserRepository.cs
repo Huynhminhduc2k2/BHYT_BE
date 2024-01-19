@@ -30,15 +30,15 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
             }
 
             // Tìm kiếm user dựa trên email bằng EF Core
-            var user = _context.Users.FirstOrDefault(u => u.Username == email.ToLower());
+            var user = _context.Users.FirstOrDefault(u => u.UserName == email.ToLower());
 
             // Trả về user tìm thấy hoặc null nếu không tìm thấy
             return user;
         }
 
-        public User GetById(int id)
+        public User GetById(string id)
         {
-            if (id == 0)
+            if (id == "")
             {
                 return null;
             }
@@ -55,7 +55,7 @@ namespace BHYT_BE.Internal.Repositories.UserRepo
 
         public User GetUserByEmail(string email)
         {
-            return _context.Users.FirstOrDefault(u => u.Username == email);
+            return _context.Users.FirstOrDefault(u => u.UserName == email);
         }
 
         public User Update(User user)

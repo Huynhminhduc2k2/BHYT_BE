@@ -34,34 +34,28 @@ namespace BHYT_BE.Migrations.InsuranceHistoryDB
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("InsuranceID")
                         .HasColumnType("integer");
 
-                    b.Property<string>("NewStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("OldStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("OldStatus")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Remark")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 

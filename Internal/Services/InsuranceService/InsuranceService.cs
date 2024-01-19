@@ -1,34 +1,33 @@
 ﻿using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
-using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
-using Stripe;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
-using Insurance = BHYT_BE.Internal.Models.Insurance;
+using System.Security.Cryptography;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
 {
     public class InsuranceService : IInsuranceService
     {
         private readonly AppSettings _appSettings;
+        private readonly IEmailAdapter _emailAdapter;
         private readonly IInsuranceRepository _insuranceRepo;
-        private readonly EmailAdapter _emailAdapter;
+        private readonly UserManager<User> _userManager;
         private readonly IInsuranceHistoryRepository _insuranceHistoryRepo;
-        private readonly IUserRepository _userRepository;
         private readonly ILogger<InsuranceService> _logger;
         public InsuranceService(
             AppSettings appSettings,
-            EmailAdapter emailAdapter,
-            IUserRepository userRepository, 
-            IInsuranceHistoryRepository insuranceHistoryRepo, 
-            IInsuranceRepository insuranceRepo, 
+            IEmailAdapter emailAdapter,
+            UserManager<User> userManager,
+            IInsuranceHistoryRepository insuranceHistoryRepo,
+            IInsuranceRepository insuranceRepo,
             ILogger<InsuranceService> logger)
         {
             _appSettings = appSettings;
             _emailAdapter = emailAdapter;
-            _userRepository = userRepository;
+            _userManager = userManager;
             _insuranceHistoryRepo = insuranceHistoryRepo;
             _insuranceRepo = insuranceRepo;
             _logger = logger;
@@ -46,10 +45,10 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 if (insurance.Status != InsuranceStatus.PENDING)
                 {
                     return false;
-                }   
+                }
                 insurance.Status = InsuranceStatus.ACCEPTED;
                 insurance = _insuranceRepo.Update(insurance);
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -77,7 +76,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     InsuranceID = insurance.InsuranceID,
                     Status = InsuranceStatus.WAITING_PAYMENT,
-                }, true, -1);
+                }, true, "");
 
                 // Additional logic if needed
 
@@ -130,7 +129,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             throw new NotImplementedException();
         }
 
-        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, int adminID)
+        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string adminID)
         {
             try
             {
@@ -140,20 +139,23 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     throw new ValidationException("Insurance status is not pending");
                 }
-                User user = _userRepository.GetById(req.UserID) ?? throw new ValidationException("Not found user");
+                User user = _userManager.FindByIdAsync(req.UserID).Result;
                 insurance.InsuranceType = req.Type;
                 User admin = new User
                 {
-                    Username = _appSettings.SystemEmail,
+                    UserName = _appSettings.SystemEmail,
                 };
                 if (isAdmin)
                 {
-                    insurance.UserID = user.Id;
-                    if (adminID != -1)
+                    if (user != null)
                     {
-                        admin = _userRepository.GetById(adminID) ?? throw new Exception("Unthorization admin");
+                        insurance.UserID = req.UserID;
                     }
-                    insurance.UpdatedBy = admin.Username;
+                    if (adminID != "")
+                    {
+                        admin = _userManager.FindByIdAsync(adminID).Result ?? throw new Exception("Unthorization admin");
+                    }
+                    insurance.UpdatedBy = admin.UserName;
                     insurance.Status = req.Status;
                     _insuranceRepo.Update(insurance);
                     if (req.Status != currentStatus)
@@ -164,19 +166,19 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                             OldStatus = currentStatus,
                             NewStatus = insurance.Status,
                             Remark = "admin update status",
-                            Email = admin.Username,
-                            CreatedBy = admin.Username,
-                            UpdatedBy = admin.Username,
+                            Email = admin.UserName,
+                            CreatedBy = admin.UserName,
+                            UpdatedBy = admin.UserName,
                         });
                     }
-                    
-                } 
+
+                }
                 else
                 {
-                    insurance.UpdatedBy = user.Username;
+                    insurance.UpdatedBy = user.Email;
                     _insuranceRepo.Update(insurance);
                 }
-                
+
                 // Additional logic if needed
                 _logger.LogInformation("Insurance created successfully");
             }
@@ -186,30 +188,78 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 throw; // Rethrow the exception after logging
             }
         }
-
-        public InsuranceDTO RequestInsurance(RequestInsuraceDTO req)
+        private static string GenerateRandomPassword(int length)
         {
-            var user = new User
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
             {
-                Username = req.Email,
-                Password = "123",
-                Roles = { new Role { Name = "User" } },
-            };
-            _userRepository.Create(user);
+                byte[] randomBytes = new byte[length];
+                rng.GetBytes(randomBytes);
+
+                char[] chars = new char[length];
+                for (int i = 0; i < length; i++)
+                {
+                    chars[i] = validChars[randomBytes[i] % validChars.Length];
+                }
+
+                return new string(chars);
+            }
+        }
+        public async Task<InsuranceDTO> RequestInsuranceAsync(RequestInsuraceDTO req)
+        {
+            var password = GenerateRandomPassword(8);
+            
+            var result = await _userManager.CreateAsync(new User
+            {
+                UserName = req.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Address = req.Address,
+                FullName = req.FullName,
+                DOB = req.DOB,
+                Email = req.Email,
+                Nation = req.Nation,
+                Nationality = req.Nationality,
+                PersonID = req.PersonID,
+                PhoneNumber = req.PhoneNumber,
+                Sex = req.Sex,
+            });
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Error while creating user");
+                return null;
+            }
+            var user = await _userManager.FindByEmailAsync(req.Email);
+            if (user == null)
+            {
+                _logger.LogError("Not found user");
+                return null;
+            }
+            var roleResult = await _userManager.AddToRoleAsync(user, Role.USER);
+            if (!roleResult.Succeeded)
+            {
+                _logger.LogError("Error while creating user");
+                return null;
+            }
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var urlConfirm = _appSettings.ClientURL + "api/User/Confirm?token=" + token + "&userId=" + user.Id;
             AddInsurance(new RegisterInsuraceDTO
             {
                 UserID = user.Id,
                 Type = req.InsuranceType,
-            }); ;
-            _emailAdapter.SendEmail(
-                user.Username,
-                "BHYT - Xác nhận đăng ký bảo hiểm y tế",
-                $"Dịch vụ đã đăng ký\n" +
-                $"Tài khoản: {user.Username}\n" +
-                $"Mật khẩu: {user.Password}\n" +
-                $"Gói dịch vụ {req.InsuranceType}\n" +
-                $"Vui lòng xác nhận tài khoản để thanh toán và đổi mật khẩu khi đăng nhập", 
-                false);
+            });
+            await _emailAdapter.SendEmailAsync(
+                email: user.Email,
+                subject: "BHYT - Xác nhận đăng ký bảo hiểm y tế",
+                body: $"<p><strong>Dịch vụ đã đăng ký</strong></p>" +
+                      $"<p><strong>Tài khoản:</strong> {user.UserName}</p>" +
+                      $"<p><strong>Mật khẩu:</strong> {password}</p>" +
+                      $"<p><strong>Gói dịch vụ:</strong> {req.InsuranceType}</p>" +
+                      $"<p><strong>Link xác nhận tài khoản:</strong> <a href='{urlConfirm}'>Xác nhận</a></p>" +
+                      "<p>Vui lòng xác nhận tài khoản để thanh toán và đổi mật khẩu khi đăng nhập</p>",
+                isHTML: true
+            );
+
             return new InsuranceDTO
             {
                 UserID = user.Id,

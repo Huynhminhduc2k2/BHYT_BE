@@ -18,11 +18,11 @@ namespace BHYT_BE.Migrations
                 {
                     InsuranceID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserID = table.Column<int>(type: "integer", nullable: false),
+                    UserID = table.Column<string>(type: "text", nullable: false),
                     InsuranceType = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", maxLength: 50, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

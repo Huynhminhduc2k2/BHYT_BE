@@ -1,28 +1,17 @@
-﻿namespace BHYT_BE.Common.AppSetting
+﻿using BHYT_BE.Internal.Adapter;
+using Stripe;
+
+namespace BHYT_BE.Common.AppSetting
 {
     public class AppSettings
     {
-        public AppSettings(IConfiguration configuration)
-        {
-            Logging = new Logging();
-            AllowedHosts = new List<string> { };
-            ConnectionStrings = new ConnectionStrings();
-            EmailSettings = new EmailSettings();
-            Jwt = new Jwt();
-            SystemEmail = "";
-            configuration.GetSection("Logging").Bind(Logging);
-            configuration.GetSection("AllowedHosts").Bind(AllowedHosts);
-            configuration.GetSection("ConnectionStrings").Bind(ConnectionStrings);
-            configuration.GetSection("EmailSettings").Bind(EmailSettings);
-            configuration.GetSection("Jwt").Bind(Jwt);
-            configuration.GetSection("SystemEmail").Bind(SystemEmail);
-        }
         public Logging Logging { get; set; }
         public List<string> AllowedHosts { get; set; }
         public ConnectionStrings ConnectionStrings { get; set; }
         public EmailSettings EmailSettings { get; set; }
         public Jwt Jwt { get; set; }
         public string SystemEmail { get; set; }
+        public string ClientURL { get; set; }
     }
 
     public class Logging
@@ -51,6 +40,7 @@
 
     public class EmailSettings
     {
+        public string Name { get; set; }
         public string SmtpServer { get; set; }
         public int Port { get; set; }
         public string UserName { get; set; }

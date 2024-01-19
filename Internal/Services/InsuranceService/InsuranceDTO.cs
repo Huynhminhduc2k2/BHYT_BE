@@ -9,7 +9,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     public class InsuranceDTO
     {
         public int InsuranceID { get; set; }
-        public int UserID { get; set; }
+        public string UserID { get; set; }
         public InsuranceType Type { get; set; }
         public InsuranceStatus Status { get; set; }
         public string CreatedBy { get; set; }
@@ -21,7 +21,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
     }
     public class RegisterInsuraceDTO
     {
-        public int UserID { get; set; }
+        public string UserID { get; set; }
         public InsuranceType Type { get; set; }
     }
 

@@ -1,55 +1,63 @@
-﻿using BCrypt.Net;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.UserService; // Thêm namespace này nếu IUserService ở trong namespace này
-using System.Net;
-using System.Net.Mail;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using BHYT_BE.Controllers.Types;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using BHYT_BE.Internal.Adapter;
+using BHYT_BE.Helper;
+using BHYT_BE.Controllers.Types;
+using AutoMapper;
+using System.Net;
+using System.Web;
+using BHYT_BE.Common.AppSetting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace BHYT_BE.Controllers
 {
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
-    {
+    { 
+        private readonly AppSettings _appSettings;
         private readonly IUserService _service;
         private readonly IMemoryCache _memoryCache;
-        private readonly IConfiguration _configuration;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IEmailAdapter _emailAdapter;
+        private readonly ILogger<UserController> _logger;
+        private readonly IMapper _mapper;
 
 
-        public UserController(IUserService userService, IMemoryCache memoryCache, IConfiguration configuration, UserManager<IdentityUser> userManager)
+        public UserController(AppSettings appSetting, IMapper mapper, IEmailAdapter emailApdater,IUserService userService, IMemoryCache memoryCache, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ILogger<UserController> logger)
         {
+            _appSettings = appSetting;
+            _emailAdapter = emailApdater;
             _service = userService;
             _memoryCache = memoryCache;
-            _configuration = configuration;
             _userManager = userManager;
+            _roleManager = roleManager;
+            _logger = logger;
+            _mapper = mapper;
         }
 
         // API để lấy danh sách tất cả users
         [HttpGet]
-        public IActionResult GetAll()
+        [Authorize(Roles = Role.ADMIN)]
+        public async Task<IActionResult> GetAll()
         {
-            var users = _userManager.Users.ToList();
+            var userDTOs = await _service.GetAllUsersAsync();
+            var users = _mapper.Map<List<UserInfoResponse>>(userDTOs);
             return Ok(users);
         }
 
         // API để lấy thông tin chi tiết của một user
         [HttpGet("{id}")]
+        [Authorize]
         public IActionResult GetById(Guid id)
         {
             var user = _userManager.Users.FirstOrDefault(x => x.Id == id.ToString());
@@ -61,41 +69,172 @@ namespace BHYT_BE.Controllers
             return Ok(user);
         }
 
-        // API để tạo một user mới
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] UserDTO userDTO)
+        [HttpPost("Register")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Register([FromBody] Register req)
         {
             try
             {
-                // Tạo một password hash từ chuỗi plain text
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
-
-                // Tạo một user mới với password hash
-                var user = new IdentityUser
+                if (!ModelState.IsValid)
                 {
-                    UserName = userDTO.Username,
-                    PasswordHash = passwordHash
-                };
-
-                // Lưu user vào database
-                var createResult = await _userManager.CreateAsync(user);
-                string otp = GenerateOTP();
-                SendEmail(userDTO.Username, otp);
-                if (createResult.Succeeded)
-                {
-                    if (userDTO.Roles != null && userDTO.Roles.Any())
+                    // Log each model state error
+                    var errList = new List<string>();
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
                     {
-                        await _userManager.AddToRolesAsync(user, userDTO.Roles);
+                        _logger.LogError($"ModelState error: {error.ErrorMessage}");
+                        errList.Add(error.ErrorMessage);
                     }
-                    _memoryCache.Set(userDTO.Username, otp);
+                    return BadRequest($"Invalid request body, err={errList.ToList()}");
+                }
+                if (!ConstantHelper.AreValidValues<Role>(req.Roles))
+                {
+                    _logger.LogError("Invalid role");
+                    return BadRequest("Invalid role");
+                }
+                if (!ConstantHelper.IsValidValue<Sex>(req.Sex))
+                {
+                    _logger.LogError("Invalid sex");
+                    return BadRequest("Invalid sex");
+                }
+                if (!req.Password.Equals(req.RePassword)) { 
+                    _logger.LogError("Password and RePassword are not the same");
+                    return BadRequest("Password and RePassword are not the same"); 
+                }
+                Random random = new Random();
+                string otp = random.Next(100000, 999999).ToString();
+                var result = await _service.CreateUser(new UserDTO
+                {
+                    UserName = req.Email,
+                    Password = req.Password,
+                    Address = req.Address,
+                    FullName = req.FullName,
+                    DOB = req.DOB,
+                    Email = req.Email,
+                    Nation = req.Nation,
+                    Nationality = req.Nationality,
+                    PersonID = req.PersonID,
+                    PhoneNumber = req.PhoneNumber,
+                    Sex = req.Sex,
+                    Roles = req.Roles,
+                }, otp); ;
+
+                if (result.Succeeded)
+                {
+                    await _emailAdapter.SendEmailAsync(req.Email, "Verification OTP", $"Your OTP is: {otp}", false);
+                    _memoryCache.Set(req.Email, otp);
                     return Ok("User was created successfully");
                 }
+                return BadRequest(error: $"Failed to create user, err = {result.Errors.ToList()}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
 
-                return BadRequest("Failed to create user");
+        [HttpPost("Login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        {
+            try
+            {
+                // Tìm người dùng theo tên đăng nhập
+                var user = await _userManager.FindByNameAsync(loginRequest.Username);
+
+                if (user != null && await _userManager.CheckPasswordAsync(user, loginRequest.Password))
+                {
+                    // Đăng nhập thành công
+
+                    // Tạo token JWT
+                    var roles = await _userManager.GetRolesAsync(user);
+                    var token = GenerateJwtToken(user, roles.ToList());
+                        
+                    // Gửi token về client
+                    var response = new LoginResponse
+                    {
+                        token = token
+                    };
+
+                    return Ok(response);
+                }
+
+                // Đăng nhập không thành công
+                return Unauthorized("Invalid username or password");
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        private string GenerateJwtToken(User user, List<string> roles)
+        {
+            // Tạo Claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email),
+            };
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // Tạo key từ Secret
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appSettings.Jwt.Secret));
+
+            // Tạo SigningCredentials
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // Tạo token
+            var token = new JwtSecurityToken(
+                issuer: _appSettings.Jwt.Issuer,
+                audience: _appSettings.Jwt.Audience,
+                claims: claims,
+                expires: DateTime.Now.AddDays(Convert.ToDouble(_appSettings.Jwt.ExpireDays)),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
+        [Authorize]
+        [HttpGet("GetCurrentUser")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                // Lấy thông tin người dùng từ Claims
+                var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation(userId);
+                if (userId == null)
+                {
+                    _logger.LogError("user id is null");
+                    return NotFound("user id is empty");
+                }
+
+                // Tìm người dùng theo ID
+                var user = await _userManager.FindByIdAsync(userId);
+
+                if (user == null)
+                {
+                    _logger.LogError("User not found");
+                    return NotFound("User not found");
+                }
+
+                // Trả về thông tin người dùng
+                return Ok(new
+                {
+                    user.UserName,
+                    user.Email,
+                    user.FullName,
+                    // Thêm các thông tin khác của người dùng nếu cần
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -111,7 +250,7 @@ namespace BHYT_BE.Controllers
 
             try
             {
-                user.UserName = userDTO.Username;
+                user.UserName = userDTO.UserName;
 
                 if (!string.IsNullOrEmpty(userDTO.Password))
                 {
@@ -187,8 +326,8 @@ try
             User client = GetUserByEmail(request.Email);
 
             System.Diagnostics.Debug.WriteLine(expectedOTP);
-            System.Diagnostics.Debug.WriteLine(client.Username);
-            if (request.OTP == expectedOTP && request.Email == client.Username)
+            System.Diagnostics.Debug.WriteLine(client.UserName);
+            if (request.OTP == expectedOTP && request.Email == client.UserName)
             {
                 client.OTP = expectedOTP;
                 _service.Update(client);
@@ -205,7 +344,7 @@ try
             try
             {
                 // Gọi phương thức dịch vụ để lấy người dùng theo email
-                User user = _service.GetByEmail(Email);
+                User user = _userManager.FindByEmailAsync(Email).Result;
 
                 if (user == null)
                 {
@@ -223,65 +362,61 @@ try
             }
         }
 
-
-        private string GenerateOTP()
+        [HttpGet("Confirm")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string token, string userId)
         {
-            // Tạo mã OTP ngẫu nhiên, ví dụ: 6 chữ số
-            Random random = new Random();
-            string otp = random.Next(100000, 999999).ToString();
-            
-            System.Diagnostics.Debug.WriteLine($"Generated OTP: {otp}");
-
-            return otp;
+            if (token == null || token == null)
+            {
+                return BadRequest("The link is Invalid or Expired");
+            }
+            //Find the User By Id
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogError($"The User ID {userId} is Invalid");
+                return NotFound("User not found");
+            }
+            //Call the ConfirmEmailAsync Method which will mark the Email as Confirmed
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (result.Succeeded)
+            {
+                return Ok("Thank you for confirming your email");
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, "Confirm account failed");
         }
 
-        private bool SendEmail(string toEmail, string otp)
+        [HttpPost("Logout")]
+        [Authorize]
+        public IActionResult Logout()
         {
+            // Invalidate the current JWT token
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_appSettings.Jwt.Secret);
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                ClockSkew = TimeSpan.Zero
+            };
+
             try
             {
-                // Retrieve email settings from IConfiguration
-                string smtpServer = _configuration["EmailSettings:SmtpServer"];
-                int port = int.Parse(_configuration["EmailSettings:Port"]);
-                string userName = _configuration["EmailSettings:UserName"];
-                string password = _configuration["EmailSettings:Password"];
-                bool enableSsl = bool.Parse(_configuration["EmailSettings:EnableSsl"]);
-
-                // Thiết lập thông tin SMTP
-                //SmtpClient client = new SmtpClient("smtp.gmail.com")
-                SmtpClient client = new SmtpClient(smtpServer)
-                {
-                    Port = port,
-                    //Credentials = new NetworkCredential("huynhminhducdev@gmail.com", "qyry jthm gsou mjoc"),
-                    Credentials = new NetworkCredential(userName, password),
-                    EnableSsl = enableSsl,
-                };
-
-                // Tạo nội dung email
-                MailMessage mailMessage = new MailMessage();
-                //mailMessage.From = new MailAddress("huynhminhducdev@gmail.com");
-                mailMessage.From = new MailAddress(userName);
-                mailMessage.To.Add(toEmail);
-                mailMessage.Subject = "Verification OTP";
-                mailMessage.Body = $"Your OTP is: {otp}";
-
-                // Gửi email
-                try
-                {
-                    client.Send(mailMessage);
-                    System.Diagnostics.Debug.WriteLine("Email sent successfully.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
-                }
-                return true;
-            } 
-            catch (Exception ex)
-            {
-                // Xử lý lỗi gửi email
-                Console.WriteLine(ex.Message);
-                return false;
+                tokenHandler.ValidateToken(token, tokenValidationParameters, out _);
             }
+            catch (Exception)
+            {
+                // Token validation failed, the token is already invalidated
+                return BadRequest("Token is already invalidated");
+            }
+
+            // You can add additional logic here, such as blacklisting the token, storing it in a database, etc.
+
+            return Ok("Logout successful");
         }
     }
 }
