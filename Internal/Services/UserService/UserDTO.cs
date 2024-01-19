@@ -23,30 +23,4 @@ namespace BHYT_BE.Internal.Services.UserService
         public string OTP { get; set; }
 
     }
-
-    public class LoginResponseDto
-    {
-        public string token { get; set; }
-    }
-
-    public class LoginRequestDTO
-    {
-        [Required]
-        [DataType(DataType.EmailAddress)]
-        public string Username { get; set; }
-
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
-    }
-
-    public class AssignRoleRequestDTO
-    {
-        [Required]
-        [DataType(DataType.EmailAddress)]
-        public string Email { get; set; }
-
-        [Required]
-        public string Role { get; set; }
-    }
 }

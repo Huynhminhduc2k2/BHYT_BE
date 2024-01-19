@@ -1,12 +1,9 @@
 ﻿using BHYT_BE.Controllers.Types;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.InsuranceService;
-using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NLog;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace BHYT_BE.Controllers
@@ -83,6 +80,7 @@ namespace BHYT_BE.Controllers
 
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [Authorize(Roles = Role.ADMIN)]
         public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
         {
             try
@@ -160,7 +158,7 @@ namespace BHYT_BE.Controllers
         }
 
         [HttpPost("private/accept")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Role.ADMIN)]
         public IActionResult AcceptInsurance([FromBody] int insuranceID)
         {
             try
@@ -182,7 +180,7 @@ namespace BHYT_BE.Controllers
             }
         }
         [HttpPost("private/delince")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Role.ADMIN)]
         public IActionResult RejectInsurance([FromBody] int insuranceID)
         {
             try

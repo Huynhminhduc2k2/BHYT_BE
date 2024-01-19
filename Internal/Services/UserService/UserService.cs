@@ -61,11 +61,9 @@ namespace BHYT_BE.Internal.Services.UserService
         }
         public async Task<IdentityResult> CreateUser(UserDTO req, string otp)
         {
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(req.Password);
             var user = new User
             {
                 UserName = req.UserName,
-                PasswordHash = passwordHash,
                 Address = req.Address,
                 FullName = req.FullName,
                 DOB = req.DOB,
@@ -77,7 +75,7 @@ namespace BHYT_BE.Internal.Services.UserService
                 Sex = req.Sex,
                 OTP = otp,
             };
-            var createUserResult = await _userManager.CreateAsync(user, passwordHash); 
+            var createUserResult = await _userManager.CreateAsync(user, req.Password); 
             if (!createUserResult.Succeeded)
             {
                 return createUserResult;

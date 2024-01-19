@@ -47,9 +47,4 @@ namespace BHYT_BE.Internal.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
-
-    public class EmailDTO
-    {
-        public string UserEmail { get; set; }
-    }
 }

@@ -8,44 +8,39 @@ namespace BHYT_BE.Controllers.Types
     }
     public class Register
     {
-        [Required]
-        [DataType(DataType.EmailAddress)]
-        public string UserName { get; set; }
+        [Required(ErrorMessage = "Họ và tên là bắt buộc")]
+        public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
-        public string Password { get; set; }
-        [Required(ErrorMessage = "Nhập lại mật khẩu là bắt buộc")]
-        public string RePassword { get; set; }
+        [Required(ErrorMessage = "Số CMND/CCCD là bắt buộc")]
+        public string PersonID { get; set; }
+
+        [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        public string PhoneNumber { get; set; }
+
+        [Required(ErrorMessage = "Ngày sinh là bắt buộc")]
+        public DateTime DOB { get; set; }
+
+        [Required(ErrorMessage = "Địa chỉ là bắt buộc")]
+        public string Address { get; set; }
 
         [Required(ErrorMessage = "Email là bắt buộc")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Họ tên là bắt buộc")]
-        public string FullName { get; set; }
-
-        [Required]
-        public string PersonID { get; set; }
-
-        [Required]
-        public string Address { get; set; }
-
-        [Required]
-        public DateTime DOB { get; set; }
-
-        [Required]
+        [Required(ErrorMessage = "Quốc gia là bắt buộc")]
         public string Nation { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Quốc tịch là bắt buộc")]
         public string Nationality { get; set; }
 
-        [Required]
-        [MaxLength(10)]
+        [Required(ErrorMessage = "Giới tính là bắt buộc")]
         public string Sex { get; set; }
 
-        [Required]
-        [Phone]
-        public string PhoneNumber { get; set; }
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        public string Password { get; set; }
+        [Required(ErrorMessage = "Nhập lại mật khẩu là bắt buộc")]
+        public string RePassword { get; set; }
         [Required]
         public List<string> Roles { get; set; }
     }
@@ -67,5 +62,27 @@ namespace BHYT_BE.Controllers.Types
         public string[] Roles { get; set; }
 
     }
+    public class LoginRequest
+    {
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string Username { get; set; }
 
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+    }
+    public class LoginResponse
+    {
+        public string token { get; set; }
+    }
+    public class AssignRoleRequest
+    {
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string Email { get; set; }
+
+        [Required]
+        public string Role { get; set; }
+    }
 }

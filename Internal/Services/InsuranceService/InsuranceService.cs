@@ -3,13 +3,9 @@ using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
-using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Identity;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Text.Encodings.Web;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
 {
@@ -194,7 +190,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         }
         private static string GenerateRandomPassword(int length)
         {
-            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+";
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
             {
@@ -212,7 +208,6 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         }
         public async Task<InsuranceDTO> RequestInsuranceAsync(RequestInsuraceDTO req)
         {
-            Random random = new Random();
             var password = GenerateRandomPassword(8);
             
             var result = await _userManager.CreateAsync(new User
