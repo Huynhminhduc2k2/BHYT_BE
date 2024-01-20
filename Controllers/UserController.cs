@@ -312,6 +312,7 @@ try
             }
         }
         [HttpPost("verifyOTP")]
+        [AllowAnonymous]
         public ActionResult<string> VerifyOTP([FromBody] VerifyOTPRequest request)
         {
             // Thực hiện xác minh mã OTP tại đây
