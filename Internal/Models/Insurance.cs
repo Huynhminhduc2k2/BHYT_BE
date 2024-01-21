@@ -3,24 +3,69 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace BHYT_BE.Internal.Models
 {
     public enum InsuranceType
     {
+        [EnumMember(Value = "STANDARD")]
         STANDARD,
+        [EnumMember(Value = "ADVANDCE")]
         ADVANDCE,
+        [EnumMember(Value = "PREMIUM")]
         PREMIUM,
     }
+    public class InsurancePrice
+    {
+        public static readonly decimal STANDARD = 100.00m;
+        public static readonly decimal ADVANCE = 200.00m;
+        public static readonly decimal PREMIUM = 300.00m;
+        public decimal Price { get; set; }
+        public InsurancePrice(InsuranceType type)
+        {
+            switch (type)
+            {
+                case InsuranceType.STANDARD:
+                    Price = STANDARD;
+                    break;
+                case InsuranceType.ADVANDCE:
+                    Price = ADVANCE;
+                    break;
+                case InsuranceType.PREMIUM:
+                    Price = PREMIUM;
+                    break;
+            }
+        }
+    }
+
+    // InsuranceType type = InsuranceType.STANDARD;
+    // InsurancePrice price = (InsurancePrice)type;
     public enum InsuranceStatus
     {
+        [EnumMember(Value = "CREATED")]
         CREATED,
+        [EnumMember(Value = "WAITING_PAYMENT")]
         WAITING_PAYMENT,
+        [EnumMember(Value = "PENDING")]
         PENDING,
+        [EnumMember(Value = "PAID")]
         PAID,
+        [EnumMember(Value = "ACCEPTED")]
         ACCEPTED,
+        [EnumMember(Value = "REJECTED")]
         REJECTED,
     }
+    public enum InsurancePaymentMethod
+    {
+        [EnumMember(Value = "BANK_STRANFER")]
+        BANK_STRANFER,
+        [EnumMember(Value = "CREDIT_CARD")]
+        CREDIT_CARD,
+        [EnumMember(Value = "PAYPAL")]
+        PAYPAL,
+    }
+    [Index(nameof(UserID))]
     public class Insurance : BaseEntity
     {
         [Key]
@@ -28,14 +73,28 @@ namespace BHYT_BE.Internal.Models
         public int InsuranceID { get; set; }
         public string UserID { get; set; }
         public InsuranceType InsuranceType { get; set; }
-        [MaxLength(50)] // ACCEPTED, REJECTED, PENDING
+        [MaxLength(50)] // ACCEPTED, REJECTED, PENDINGS
         public InsuranceStatus Status { get; set; }
         [MaxLength(64)]
+        public decimal PremiumAmount { get; set; } // Số tiền phí bảo hiểm
+        public DateTime? StartDate { get; set; } // Ngày bắt đầu hiệu lực hợp đồng
+        public DateTime? EndDate { get; set; } // Ngày kết thúc hiệu lực hợp đồng
+        public DateTime? LastPaymentDate { get; set; } // Ngày thanh toán gần nhất
+        public bool IsAutoRenewal { get; set; } // Có tự động gia hạn không
         public string? CreatedBy { get; set; }
         [MaxLength(64)]
         public string? UpdatedBy { get; set; }
     }
-
+    public class InsurancePaymentHistory : BaseEntity
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int PaymentHistoryID { get; set; }
+        public int InsuranceID { get; set; } // Khóa ngoại liên kết với Insurance
+        public decimal AmountPaid { get; set; } // Số tiền đã thanh toán
+        public DateTime PaymentDate { get; set; } // Ngày thanh toán
+        public InsurancePaymentMethod PaymentMethod { get; set; } // Phương thức thanh toán (chuyển khoản, thẻ tín dụng, ...)
+    }
     public class InsuranceHistory : BaseEntity
     {
         [Key]

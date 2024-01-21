@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace BHYT_BE.Controllers
 {
@@ -80,7 +81,6 @@ namespace BHYT_BE.Controllers
 
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        [Authorize(Roles = Role.ADMIN)]
         public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
         {
             try
@@ -92,10 +92,10 @@ namespace BHYT_BE.Controllers
                     _logger.LogError("Invalid insurance type");
                     return BadRequest("Invalid insurance type");
                 }
-                //TODO: Get user id from token or orther 
+                var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 _service.AddInsurance(new RegisterInsuraceDTO
                 {
-                    UserID = req.UserID,
+                    UserID = userId,
                     Type = insuranceType,
                 }); ;
 
@@ -135,14 +135,21 @@ namespace BHYT_BE.Controllers
                 {
                     _logger.LogError("Invalid insurance status");
                     return BadRequest("Invalid insurance status");
-                }   
+                }  
+                var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var role = HttpContext.User.FindFirst(ClaimTypes.Role)?.Value;
+                bool isAdmin = false;
+                if (role == Role.ADMIN)
+                {
+                    isAdmin = true;
+                }
                 _service.UpdateInsurance(new InsuranceDTO
                 {
                     InsuranceID = req.InsuranceID,
                     UserID = req.UserID,
                     Type = insuranceType,
                     Status = insuranceStatus,
-                }, req.IsAdmin, req.AdminID);
+                }, isAdmin, userId);
 
                 
                 return Ok("Registration successful");
@@ -150,6 +157,10 @@ namespace BHYT_BE.Controllers
             catch (ValidationException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception exception)
             {

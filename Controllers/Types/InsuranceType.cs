@@ -36,7 +36,6 @@ namespace BHYT_BE.Controllers.Types
     }
     public class RegisterInsurance
     {
-        public string UserID { get; set; }
         public string InsuranceType { get; set; }
     }
     public class EditInsuranceRequest
@@ -45,8 +44,6 @@ namespace BHYT_BE.Controllers.Types
         public string UserID { get; set; }
         public string InsuranceType { get; set; }
         public string Status { get; set; }
-        public bool IsAdmin { get; set; }
-        public string AdminID { get; set; }
     }
 
 }
