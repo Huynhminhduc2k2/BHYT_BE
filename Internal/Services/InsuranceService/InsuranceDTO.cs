@@ -12,6 +12,11 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         public string UserID { get; set; }
         public InsuranceType Type { get; set; }
         public InsuranceStatus Status { get; set; }
+        public decimal PremiumAmount { get; set; } // Số tiền phí bảo hiểm
+        public DateTime? StartDate { get; set; } // Ngày bắt đầu hiệu lực hợp đồng
+        public DateTime? EndDate { get; set; } // Ngày kết thúc hiệu lực hợp đồng
+        public DateTime? LastPaymentDate { get; set; } // Ngày thanh toán gần nhất
+        public bool IsAutoRenewal { get; set; } // Có tự động gia hạn không
         public string CreatedBy { get; set; }
         public string UpdatedBy { get; set; }
 

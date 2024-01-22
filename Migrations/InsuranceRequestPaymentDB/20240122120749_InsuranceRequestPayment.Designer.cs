@@ -3,17 +3,20 @@ using System;
 using BHYT_BE.Internal.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
+namespace BHYT_BE.Migrations.InsuranceRequestPaymentDB
 {
-    [DbContext(typeof(InsurancePaymentHistoryDBContext))]
-    partial class InsurancePaymentHistoryDBContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(InsuranceRequestPaymentDBContext))]
+    [Migration("20240122120749_InsuranceRequestPayment")]
+    partial class InsuranceRequestPayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,13 +25,13 @@ namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BHYT_BE.Internal.Models.InsurancePaymentHistory", b =>
+            modelBuilder.Entity("BHYT_BE.Internal.Models.InsuranceRequestPayment", b =>
                 {
-                    b.Property<int>("PaymentHistoryID")
+                    b.Property<int>("InsuranceRequestPaymentID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentHistoryID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InsuranceRequestPaymentID"));
 
                     b.Property<decimal>("AmountPaid")
                         .HasColumnType("numeric");
@@ -36,7 +39,10 @@ namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("InsuranceID")
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("InsuranceRequestID")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("PaymentDate")
@@ -48,9 +54,12 @@ namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("PaymentHistoryID");
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
 
-                    b.ToTable("InsurancePaymentHistories");
+                    b.HasKey("InsuranceRequestPaymentID");
+
+                    b.ToTable("InsuranceRequestPayments");
                 });
 #pragma warning restore 612, 618
         }

@@ -111,4 +111,31 @@ namespace BHYT_BE.Internal.Models
         public string? UpdatedBy { get; set; }
 
     }
+    public class InsuranceRequest : BaseEntity
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int InsuranceRequestID { get; set; }
+        public int InsuranceID { get; set; } // Khóa ngoại liên kết với Insurance
+        public decimal RequestedAmount { get; set; } // Số tiền yêu cầu thanh toán
+        public DateTime RequestDate { get; set; } // Ngày yêu cầu thanh toán
+        public string RequestedBy { get; set; } // Người yêu cầu thanh toán (có thể là ID của người dùng)
+        public string MedicalRecord { get; set; } // Bản ghi y tế hoặc mô tả điều trị
+        public bool? IsApproved { get; set; }
+        public DateTime? ApprovalDate { get; set; }
+        [MaxLength(255)]
+        public string? RejectionReason { get; set; }
+    }
+    public class InsuranceRequestPayment : BaseEntity
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int InsuranceRequestPaymentID { get; set; }
+        public int InsuranceRequestID { get; set; }
+        public decimal AmountPaid { get; set; } 
+        public DateTime PaymentDate { get; set; }
+        public InsurancePaymentMethod PaymentMethod { get; set; }
+        public string? CreatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
+    }
 }

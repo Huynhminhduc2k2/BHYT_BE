@@ -4,30 +4,32 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
+namespace BHYT_BE.Migrations.InsuranceRequestPaymentDB
 {
     /// <inheritdoc />
-    public partial class InsurancePaymentHistory : Migration
+    public partial class InsuranceRequestPayment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "InsuranceHistories",
+                name: "InsuranceRequestPayments",
                 columns: table => new
                 {
-                    PaymentHistoryID = table.Column<int>(type: "integer", nullable: false)
+                    InsuranceRequestPaymentID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    InsuranceID = table.Column<int>(type: "integer", nullable: false),
+                    InsuranceRequestID = table.Column<int>(type: "integer", nullable: false),
                     AmountPaid = table.Column<decimal>(type: "numeric", nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PaymentMethod = table.Column<int>(type: "integer", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InsuranceHistories", x => x.PaymentHistoryID);
+                    table.PrimaryKey("PK_InsuranceRequestPayments", x => x.InsuranceRequestPaymentID);
                 });
         }
 
@@ -35,7 +37,7 @@ namespace BHYT_BE.Migrations.InsurancePaymentHistoryDB
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "InsuranceHistories");
+                name: "InsuranceRequestPayments");
         }
     }
 }

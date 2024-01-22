@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace BHYT_BE.Internal.Repository.Data
 {
-    public class InsurancePaymentHistoryDBContext : DbContext
+    public class InsuranceRequestDBContext : DbContext
     {
-        public InsurancePaymentHistoryDBContext(DbContextOptions<InsurancePaymentHistoryDBContext> options) : base(options) { }
+        public InsuranceRequestDBContext(DbContextOptions<InsuranceRequestDBContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.UseIdentityColumns();
         }
-        public DbSet<InsurancePaymentHistory> InsurancePaymentHistories { get; set; }
+        public DbSet<InsuranceRequest> InsuranceRequests { get; set; }
         public override int SaveChanges()
         {
             AddTimestamps();

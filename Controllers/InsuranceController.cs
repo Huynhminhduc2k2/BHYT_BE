@@ -48,11 +48,6 @@ namespace BHYT_BE.Controllers
                     _logger.LogError("Invalid insurance type");
                     return BadRequest("Invalid insurance type");
                 }
-                // TODO: add new user from request
-
-                //TODO: Send notification to email
-
-                //TODO: Add new register insurance from new user
                 await _service.RequestInsuranceAsync(new RequestInsuraceDTO
                 {
                     Email = req.Email,
