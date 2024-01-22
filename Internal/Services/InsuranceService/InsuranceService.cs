@@ -1,10 +1,12 @@
-﻿using BHYT_BE.Common.AppSetting;
+﻿using AutoMapper;
+using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Security.Cryptography;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
@@ -17,9 +19,12 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         private readonly UserManager<User> _userManager;
         private readonly IInsuranceHistoryRepository _insuranceHistoryRepo;
         private readonly ILogger<InsuranceService> _logger;
+        private readonly IMapper _mapper;
+
         public InsuranceService(
             AppSettings appSettings,
             IEmailAdapter emailAdapter,
+            IMapper mapper,
             UserManager<User> userManager,
             IInsuranceHistoryRepository insuranceHistoryRepo,
             IInsuranceRepository insuranceRepo,
@@ -31,6 +36,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             _insuranceHistoryRepo = insuranceHistoryRepo;
             _insuranceRepo = insuranceRepo;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public bool AcceptInsurance(int insuranceID)
@@ -58,16 +64,23 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             }
         }
 
-        public void AddInsurance(RegisterInsuraceDTO req)
+        public async void AddInsurance(RegisterInsuraceDTO req)
         {
             try
             {
-                // TODO: check user id
+                var result = await _userManager.FindByIdAsync(req.UserID);
+                if (result == null)
+                {
+                    throw new ValidationException("Not found user");
+                }
                 Insurance insurance = new Insurance
                 {
                     UserID = req.UserID,
                     InsuranceType = req.Type,
                     Status = InsuranceStatus.CREATED,
+                    IsAutoRenewal = false,
+                    PremiumAmount = new InsurancePrice(req.Type).Price,
+                    CreatedBy = result.UserName,
                 };
 
                 insurance = _insuranceRepo.Create(insurance);
@@ -114,22 +127,25 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             }
         }
 
-        public List<InsuranceDTO> GetAllInsurances()
+        public async Task<List<InsuranceDTO>> GetAllInsurancesAsync()
         {
-            throw new NotImplementedException();
+            var insurances = await _insuranceRepo.GetAll();
+            var insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
+            return insuranceDTOs;
         }
 
-        public InsuranceDTO GetInsuranceByID(ulong id)
+        public InsuranceDTO GetInsuranceByID(int id)
         {
-            throw new NotImplementedException();
+            var insurance = _insuranceRepo.GetByID(id);
+            if (insurance == null)
+            {
+                throw new ValidationException("Not found insurance");
+            }
+            var insuranceDTO = _mapper.Map<InsuranceDTO>(insurance);
+            return insuranceDTO;
         }
 
-        public InsuranceDTO GetInsuranceByPersonID(string personID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string adminID)
+        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string userId)
         {
             try
             {
@@ -139,23 +155,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     throw new ValidationException("Insurance status is not pending");
                 }
-                User user = _userManager.FindByIdAsync(req.UserID).Result;
+                User updateUser = _userManager.FindByIdAsync(req.UserID).Result ?? throw new ValidationException("User not found"); ;
+                User user = _userManager.FindByIdAsync(userId).Result ?? throw new UnauthorizedAccessException("Unauthorization");
                 insurance.InsuranceType = req.Type;
-                User admin = new User
-                {
-                    UserName = _appSettings.SystemEmail,
-                };
                 if (isAdmin)
                 {
-                    if (user != null)
+                    if (updateUser != null)
                     {
                         insurance.UserID = req.UserID;
                     }
-                    if (adminID != "")
-                    {
-                        admin = _userManager.FindByIdAsync(adminID).Result ?? throw new Exception("Unthorization admin");
-                    }
-                    insurance.UpdatedBy = admin.UserName;
+                    insurance.UpdatedBy = user.UserName;
                     insurance.Status = req.Status;
                     _insuranceRepo.Update(insurance);
                     if (req.Status != currentStatus)
@@ -166,9 +175,9 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                             OldStatus = currentStatus,
                             NewStatus = insurance.Status,
                             Remark = "admin update status",
-                            Email = admin.UserName,
-                            CreatedBy = admin.UserName,
-                            UpdatedBy = admin.UserName,
+                            Email = user.UserName,
+                            CreatedBy = user.UserName,
+                            UpdatedBy = user.UserName,
                         });
                     }
 

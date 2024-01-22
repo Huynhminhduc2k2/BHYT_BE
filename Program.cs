@@ -81,6 +81,10 @@ try
     // Context
     builder.Services.AddDbContext<InsuranceDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     builder.Services.AddDbContext<InsuranceHistoryDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
+    builder.Services.AddDbContext<InsurancePaymentHistoryDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
+    builder.Services.AddDbContext<InsurancePaymentHistoryDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
+    builder.Services.AddDbContext<InsuranceRequestDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
+    builder.Services.AddDbContext<InsuranceRequestPaymentDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     // Init service and repo
     builder.Services.AddScoped<IInsuranceHistoryRepository, InsuranceHistoryRepository>();

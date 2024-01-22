@@ -8,10 +8,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BHYT_BE.Migrations
+namespace BHYT_BE.Migrations.InsuranceRequestPaymentDB
 {
-    [DbContext(typeof(InsuranceDBContext))]
-    partial class InsuranceDBContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(InsuranceRequestPaymentDBContext))]
+    partial class InsuranceRequestPaymentDBContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -22,13 +22,16 @@ namespace BHYT_BE.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BHYT_BE.Internal.Models.Insurance", b =>
+            modelBuilder.Entity("BHYT_BE.Internal.Models.InsuranceRequestPayment", b =>
                 {
-                    b.Property<int>("InsuranceID")
+                    b.Property<int>("InsuranceRequestPaymentID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InsuranceID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InsuranceRequestPaymentID"));
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -36,45 +39,24 @@ namespace BHYT_BE.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("InsuranceType")
+                    b.Property<int>("InsuranceRequestID")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("IsAutoRenewal")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastPaymentDate")
+                    b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("PremiumAmount")
-                        .HasMaxLength(64)
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasMaxLength(50)
+                    b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("UserID")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("InsuranceID");
+                    b.HasKey("InsuranceRequestPaymentID");
 
-                    b.HasIndex("UserID");
-
-                    b.ToTable("Insurances");
+                    b.ToTable("InsuranceRequestPayments");
                 });
 #pragma warning restore 612, 618
         }
