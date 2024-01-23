@@ -12,8 +12,6 @@ using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Helper;
 using BHYT_BE.Controllers.Types;
 using AutoMapper;
-using System.Net;
-using System.Web;
 using BHYT_BE.Common.AppSetting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -148,14 +146,14 @@ namespace BHYT_BE.Controllers
 
                     // Tạo token JWT
                     var roles = await _userManager.GetRolesAsync(user);
-                    var token = GenerateJwtToken(user, roles.ToList());
+                    var token = await GenerateJwtTokenAsync(user, roles.ToList());
                         
                     // Gửi token về client
                     var response = new LoginResponse
                     {
                         token = token
                     };
-
+                    await _userManager.AddLoginAsync(user, new UserLoginInfo("JWT", token, "JWT"));
                     return Ok(response);
                 }
 
@@ -168,7 +166,7 @@ namespace BHYT_BE.Controllers
             }
         }
 
-        private string GenerateJwtToken(User user, List<string> roles)
+        private async Task<string> GenerateJwtTokenAsync(User user, List<string> roles)
         {
             // Tạo Claims
             var claims = new List<Claim>
@@ -180,13 +178,13 @@ namespace BHYT_BE.Controllers
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
-
+            await _userManager.AddClaimsAsync(user, claims);
+            
             // Tạo key từ Secret
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appSettings.Jwt.Secret));
 
             // Tạo SigningCredentials
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
             // Tạo token
             var token = new JwtSecurityToken(
                 issuer: _appSettings.Jwt.Issuer,
@@ -216,7 +214,7 @@ namespace BHYT_BE.Controllers
 
                 // Tìm người dùng theo ID
                 var user = await _userManager.FindByIdAsync(userId);
-
+                var role = await _userManager.GetRolesAsync(user);
                 if (user == null)
                 {
                     _logger.LogError("User not found");
@@ -229,6 +227,7 @@ namespace BHYT_BE.Controllers
                     user.UserName,
                     user.Email,
                     user.FullName,
+                    role
                     // Thêm các thông tin khác của người dùng nếu cần
                 });
             }
@@ -390,6 +389,9 @@ try
         [Authorize]
         public IActionResult Logout()
         {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = _userManager.FindByIdAsync(userId).Result;
+            _userManager.RemoveClaimsAsync(user, HttpContext.User.Claims).Wait();
             // Invalidate the current JWT token
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -403,7 +405,6 @@ try
                 ValidateLifetime = false,
                 ClockSkew = TimeSpan.Zero
             };
-
             try
             {
                 tokenHandler.ValidateToken(token, tokenValidationParameters, out _);

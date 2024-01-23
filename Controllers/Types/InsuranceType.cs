@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BHYT_BE.Internal.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace BHYT_BE.Controllers.Types
 {
@@ -45,5 +46,50 @@ namespace BHYT_BE.Controllers.Types
         public string InsuranceType { get; set; }
         public string Status { get; set; }
     }
+    public class InsuranceResponse
+    {
+        public int InsuranceID { get; set; }
+        public string UserID { get; set; }
+        public string Type { get; set; }
+        public string Status { get; set; }
+        public decimal PremiumAmount { get; set; } // Số tiền phí bảo hiểm
+        public DateTime? StartDate { get; set; } // Ngày bắt đầu hiệu lực hợp đồng
+        public DateTime? EndDate { get; set; } // Ngày kết thúc hiệu lực hợp đồng
+        public DateTime? LastPaymentDate { get; set; } // Ngày thanh toán gần nhất
+        public bool IsAutoRenewal { get; set; } // Có tự động gia hạn không
+        public string CreatedBy { get; set; }
+        public string UpdatedBy { get; set; }
 
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+    public class InsuranceHistoryResponse
+    {
+        public int InsuranceHistoryID { get; set; }
+        public int InsuranceID { get; set; }
+        public InsuranceStatus OldStatus { get; set; }
+        public InsuranceStatus NewStatus { get; set; }
+        public string? Remark { get; set; }
+        public string? Email { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
+    }
+    public class InsurancePaymentHistoryResponse
+    {
+        public int PaymentHistoryID { get; set; }
+        public int InsuranceID { get; set; } // Khóa ngoại liên kết với Insurance
+        public decimal AmountPaid { get; set; } // Số tiền đã thanh toán
+        public DateTime PaymentDate { get; set; } // Ngày thanh toán
+        public InsurancePaymentMethod PaymentMethod { get; set; } // Phương thức thanh toán (chuyển khoản, thẻ tín dụng, ...)
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+    public class InsuranceDetailResponse
+    {
+        public InsuranceResponse InsuranceResp { get; set; }
+        public List<InsuranceHistoryResponse>? InsuranceHistoryResp { get; set; }
+        public List<InsurancePaymentHistoryResponse>? InsurancePaymentHistoryResp { get; set; }
+    }
 }

@@ -17,9 +17,9 @@ namespace BHYT_BE.Internal.Repository.InsuranceHistoryRepo
             _context.SaveChanges();
             return insurance;
         }
-        public List<InsuranceHistory> GetInsuranceHistoriesByInsuranceID(int insuranceID)
+        public async Task<List<InsuranceHistory>> GetInsuranceHistoriesByInsuranceID(int insuranceID)
         {
-            return _context.InsuranceHistories.Where(i => i.InsuranceID == insuranceID).ToList();
+            return await _context.InsuranceHistories.Where(i => i.InsuranceID == insuranceID).ToListAsync();
         }
     }
 }
