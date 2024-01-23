@@ -5,6 +5,7 @@ using BHYT_BE.Internal.Repositories.Data;
 using BHYT_BE.Internal.Repositories.UserRepo;
 using BHYT_BE.Internal.Repository.Data;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
+using BHYT_BE.Internal.Repository.InsurancePaymentHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using BHYT_BE.Internal.Services.InsuranceService;
 using BHYT_BE.Internal.Services.MapperService;
@@ -12,12 +13,12 @@ using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
 using Stripe;
+using System.Security.Claims;
 using System.Text;
 
 // Early init of NLog to allow startup and exception logging, before host is built
@@ -87,6 +88,7 @@ try
     builder.Services.AddDbContext<InsuranceRequestPaymentDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     builder.Services.AddDbContext<UserDBContext>(options => options.UseNpgsql(appSettings.ConnectionStrings.DBConnection));
     // Init service and repo
+    builder.Services.AddScoped<IInsurancePaymenHistoryRepository, InsurancePaymenHistoryRepository>();
     builder.Services.AddScoped<IInsuranceHistoryRepository, InsuranceHistoryRepository>();
     builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
     builder.Services.AddScoped<IInsuranceService, InsuranceService>();
@@ -139,6 +141,8 @@ try
     });
 
     builder.Services.AddScoped<ITokenRepository, JWTRepository>();
+    builder.Services.AddHttpContextAccessor();
+
     var app = builder.Build();
     using (var scope = app.Services.CreateScope())
     {
@@ -150,6 +154,15 @@ try
 
             var insuranceHistoryDbContext = services.GetRequiredService<InsuranceHistoryDBContext>();
             insuranceHistoryDbContext.Database.Migrate();
+
+            var insurancePaymentHistoryDbContext = services.GetRequiredService<InsurancePaymentHistoryDBContext>();
+            insurancePaymentHistoryDbContext.Database.Migrate();
+
+            var insuranceRequestDbContext = services.GetRequiredService<InsuranceRequestDBContext>();
+            insuranceRequestDbContext.Database.Migrate();
+
+            var insuranceRequestPaymentDbContext = services.GetRequiredService<InsuranceRequestPaymentDBContext>();
+            insuranceRequestPaymentDbContext.Database.Migrate();
 
             var userDbContext = services.GetRequiredService<UserDBContext>();
             userDbContext.Database.Migrate();
@@ -172,7 +185,6 @@ try
 
     app.UseAuthorization();
     app.UseAuthentication();
-
     app.MapControllers();
 
     app.Run();

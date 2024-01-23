@@ -1,4 +1,5 @@
-﻿using BHYT_BE.Controllers.Types;
+﻿using AutoMapper;
+using BHYT_BE.Controllers.Types;
 using BHYT_BE.Internal.Models;
 using BHYT_BE.Internal.Services.InsuranceService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,11 +17,133 @@ namespace BHYT_BE.Controllers
     {
         private readonly IInsuranceService _service;
         private readonly ILogger<InsuranceController> _logger;
-        public InsuranceController(IInsuranceService insuranceService, ILogger<InsuranceController> logger)
+        private readonly IMapper _mapper;
+        public InsuranceController(IInsuranceService insuranceService, ILogger<InsuranceController> logger, IMapper mapper)
         {
             _logger = logger;
             _service = insuranceService;
-            _logger.LogInformation(1, "NLog injected into HomeController");
+            _mapper = mapper;
+        }
+        [HttpGet("all")]
+        [Authorize(Roles = Role.ADMIN)]
+        public async Task<IActionResult> GetAllInsurance(string? userId)
+        {
+            try
+            {
+                var insuranceDTOs = await _service.GetAllInsurancesAsync(userId);
+                var insuranceResponse = insuranceDTOs.Select(insurance => new InsuranceResponse
+                {
+                    InsuranceID = insurance.InsuranceID,
+                    UserID = insurance.UserID,
+                    Type = insurance.Type.ToString(),
+                    Status = insurance.Status.ToString(),
+                    EndDate = insurance.EndDate,
+                    IsAutoRenewal = insurance.IsAutoRenewal,
+                    LastPaymentDate = insurance.LastPaymentDate,
+                    PremiumAmount = insurance.PremiumAmount,
+                    StartDate = insurance.StartDate,
+                    CreatedBy = insurance.CreatedBy,
+                    UpdatedBy = insurance.UpdatedBy,
+                    CreatedAt = insurance.CreatedAt,
+                    UpdatedAt = insurance.UpdatedAt,
+                });
+                return Ok(insuranceResponse);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (ValidationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+        [HttpGet]
+        [Authorize(Roles = Role.USER)]
+        public async Task<IActionResult> GetAllInsuranceByUser()
+        {
+            try
+            {
+                var userID = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var insuranceDTOs = await _service.GetAllInsurancesByUserAsync(userID);
+                _logger.LogInformation("Insurance: {Insurance}", insuranceDTOs);
+                var insuranceResponse = insuranceDTOs.Select(insurance => new InsuranceResponse
+                {
+                    InsuranceID = insurance.InsuranceID,
+                    UserID = insurance.UserID,
+                    Type = insurance.Type.ToString(),
+                    Status = insurance.Status.ToString(),
+                    EndDate = insurance.EndDate,
+                    IsAutoRenewal = insurance.IsAutoRenewal,
+                    LastPaymentDate = insurance.LastPaymentDate,
+                    PremiumAmount = insurance.PremiumAmount,
+                    StartDate = insurance.StartDate,
+                    CreatedBy = insurance.CreatedBy,
+                    UpdatedBy = insurance.UpdatedBy,
+                    CreatedAt = insurance.CreatedAt,
+                    UpdatedAt = insurance.UpdatedAt,
+                });
+                return Ok(insuranceResponse);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (ValidationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+        [HttpGet("detail")]
+        public async Task<IActionResult> GetInsuranceDetailByID(int insuranceID)
+        {
+            try
+            {
+                var insuranceDetailtDTO = await _service.GetInsuranceDetail(insuranceID);
+                var insuranceResponse = _mapper.Map<InsuranceResponse>(insuranceDetailtDTO.Insurance);
+                var insuranceHistoryResponse = _mapper.Map<List<InsuranceHistoryResponse>>(insuranceDetailtDTO.History);
+                var insurancePaymentHistoryResponse = _mapper.Map<List<InsurancePaymentHistoryResponse>>(insuranceDetailtDTO.PaymentHistory);
+
+                //var insuranceResponse = new InsuranceResponse
+                //{
+                //    InsuranceID = insuranceDTOs.InsuranceID,
+                //    UserID = insuranceDTOs.UserID,
+                //    Type = insuranceDTOs.Type.ToString(),
+                //    Status = insuranceDTOs.Status.ToString(),
+                //    EndDate = insuranceDTOs.EndDate,
+                //    IsAutoRenewal = insuranceDTOs.IsAutoRenewal,
+                //    LastPaymentDate = insuranceDTOs.LastPaymentDate,
+                //    PremiumAmount = insuranceDTOs.PremiumAmount,
+                //    StartDate = insuranceDTOs.StartDate,
+                //    CreatedBy = insuranceDTOs.CreatedBy,
+                //    UpdatedBy = insuranceDTOs.UpdatedBy,
+                //    CreatedAt = insuranceDTOs.CreatedAt,
+                //    UpdatedAt = insuranceDTOs.UpdatedAt,
+                //};
+                var insuranceDetailResponse = new InsuranceDetailResponse
+                {
+                    InsuranceResp = insuranceResponse,
+                    InsuranceHistoryResp = insuranceHistoryResponse,
+                    InsurancePaymentHistoryResp = insurancePaymentHistoryResponse,
+                };
+                return Ok(insuranceResponse);
+            }
+            catch (ValidationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
         [HttpPost("request")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]

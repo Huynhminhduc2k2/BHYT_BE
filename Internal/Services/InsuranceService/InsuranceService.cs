@@ -2,12 +2,16 @@
 using BHYT_BE.Common.AppSetting;
 using BHYT_BE.Internal.Adapter;
 using BHYT_BE.Internal.Models;
+using BHYT_BE.Internal.Repository.InsurancePaymentHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceHistoryRepo;
 using BHYT_BE.Internal.Repository.InsuranceRepo;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Routing.Patterns;
+using BHYT_BE.Internal.Services.UserService;
+using Stripe.Radar;
 
 namespace BHYT_BE.Internal.Services.InsuranceService
 {
@@ -17,7 +21,9 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         private readonly IEmailAdapter _emailAdapter;
         private readonly IInsuranceRepository _insuranceRepo;
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManger;
         private readonly IInsuranceHistoryRepository _insuranceHistoryRepo;
+        private readonly IInsurancePaymenHistoryRepository _insurancePaymentHistoryRepo;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IMapper _mapper;
 
@@ -26,14 +32,18 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             IEmailAdapter emailAdapter,
             IMapper mapper,
             UserManager<User> userManager,
+            RoleManager<IdentityRole> roleManger,
             IInsuranceHistoryRepository insuranceHistoryRepo,
+            IInsurancePaymenHistoryRepository insurancePaymentHistoryRepo,
             IInsuranceRepository insuranceRepo,
             ILogger<InsuranceService> logger)
         {
             _appSettings = appSettings;
             _emailAdapter = emailAdapter;
             _userManager = userManager;
+            _roleManger = roleManger;
             _insuranceHistoryRepo = insuranceHistoryRepo;
+            _insurancePaymentHistoryRepo = insurancePaymentHistoryRepo;
             _insuranceRepo = insuranceRepo;
             _logger = logger;
             _mapper = mapper;
@@ -43,7 +53,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         {
             try
             {
-                Insurance insurance = _insuranceRepo.GetByID(insuranceID);
+                Insurance insurance = _insuranceRepo.GetByID(insuranceID).Result;
                 if (insurance == null)
                 {
                     throw new ValidationException("Not found insurance");
@@ -106,7 +116,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         {
             try
             {
-                Insurance insurance = _insuranceRepo.GetByID(insuranceID);
+                Insurance insurance = _insuranceRepo.GetByID(insuranceID).Result;
                 if (insurance == null)
                 {
                     throw new ValidationException("Not found insurance");
@@ -127,16 +137,27 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             }
         }
 
-        public async Task<List<InsuranceDTO>> GetAllInsurancesAsync()
+        public async Task<List<InsuranceDTO>> GetAllInsurancesAsync(string? userID)
         {
-            var insurances = await _insuranceRepo.GetAll();
-            var insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
+            List<Insurance> insurances;
+            List<InsuranceDTO> insuranceDTOs;
+            if (userID == null)
+            {
+                insurances = await _insuranceRepo.GetAll();
+                insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
+                return insuranceDTOs;
+            }
+
+            var _ = await _userManager.FindByIdAsync(userID) ?? throw new ValidationException("Not found user");
+            
+            insurances = await _insuranceRepo.GetInsuranceByUserID(userID);
+            insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
             return insuranceDTOs;
         }
 
-        public InsuranceDTO GetInsuranceByID(int id)
+        public async Task<InsuranceDTO> GetInsuranceByID(int id)
         {
-            var insurance = _insuranceRepo.GetByID(id);
+            var insurance = await _insuranceRepo.GetByID(id);
             if (insurance == null)
             {
                 throw new ValidationException("Not found insurance");
@@ -144,12 +165,33 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             var insuranceDTO = _mapper.Map<InsuranceDTO>(insurance);
             return insuranceDTO;
         }
+        public async Task<InsuranceDetailDTO> GetInsuranceDetail(int id)
+        {
+            var insurance = await _insuranceRepo.GetByID(id);
+            if (insurance == null)
+            {
+                throw new ValidationException("Not found insurance");
+            }
+            var insuranceDTO = _mapper.Map<InsuranceDTO>(insurance);
+
+            var insuranceHistories = await _insuranceHistoryRepo.GetInsuranceHistoriesByInsuranceID(id);
+            var insuranceHistoriesDTO = _mapper.Map<List<InsuranceHistoryDTO>>(insuranceHistories);
+
+            var insurancePaymentHistories = await _insurancePaymentHistoryRepo.GetInsurancePaymentHistoriesByInsuranceID(id);
+            var insurancePaymentHistoriesDTO = _mapper.Map<List<InsurancePaymentHistoryDTO>>(insurancePaymentHistories);
+            return new InsuranceDetailDTO
+            {
+                Insurance = insuranceDTO,
+                History = insuranceHistoriesDTO,
+                PaymentHistory = insurancePaymentHistoriesDTO
+            };
+        }
 
         public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string userId)
         {
             try
             {
-                Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID);
+                Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID).Result;
                 InsuranceStatus currentStatus = insurance.Status;
                 if (currentStatus == InsuranceStatus.REJECTED || currentStatus == InsuranceStatus.ACCEPTED)
                 {
@@ -274,6 +316,22 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 UserID = user.Id,
                 Type = req.InsuranceType,
             };
+        }
+
+        public async Task<List<InsuranceDTO>> GetAllInsurancesByUserAsync(string? userID)
+        {
+            if (userID == null)
+            {
+                throw new UnauthorizedAccessException("Unauthorization");
+            }
+            List<Insurance> insurances;
+            List<InsuranceDTO> insuranceDTOs;
+            var _ = await _userManager.FindByIdAsync(userID) ?? throw new ValidationException("Not found user");
+
+            insurances = await _insuranceRepo.GetInsuranceByUserID(userID);
+            _logger.LogInformation("Insurance created successfully {insurances}", insurances);
+            insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
+            return insuranceDTOs;
         }
     }
 }

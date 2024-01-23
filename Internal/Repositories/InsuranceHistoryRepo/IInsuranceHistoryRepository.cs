@@ -5,7 +5,7 @@ namespace BHYT_BE.Internal.Repository.InsuranceHistoryRepo
 {
     public interface IInsuranceHistoryRepository
     {
-        public List<InsuranceHistory> GetInsuranceHistoriesByInsuranceID(int insuranceID);
+        public Task<List<InsuranceHistory>> GetInsuranceHistoriesByInsuranceID(int insuranceID);
         public InsuranceHistory Create(InsuranceHistory insurance);
     }
 }

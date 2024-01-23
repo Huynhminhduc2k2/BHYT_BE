@@ -23,24 +23,18 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
             return await _context.Insurances.ToListAsync();
         }
 
-        public Insurance GetByID(int id)
+        public async Task<Insurance> GetByID(int id)
         {
             if (id == 0)
             {
                 return null;
             }
-            return _context.Insurances.Find(id);
+            return await _context.Insurances.FindAsync(id);
         }
 
-
-
-        public async Task<Insurance> GetByUserID(string userID)
+        public async Task<List<Insurance>> GetInsuranceByUserID(string userID)
         {
-            if (userID == "")
-            {
-                return null;
-            }
-            return await _context.Insurances.FirstOrDefaultAsync(insurance => insurance.UserID == userID);
+            return await _context.Insurances.Where(insurance => insurance.UserID == userID).ToListAsync();
         }
 
         public Insurance Update(Insurance insurance)
