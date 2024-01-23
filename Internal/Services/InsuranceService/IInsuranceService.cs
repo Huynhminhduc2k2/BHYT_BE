@@ -11,6 +11,6 @@
         Task<InsuranceDetailDTO> GetInsuranceDetail(int id);
         bool AcceptInsurance(int insuranceID);
         bool RejectInsurance(int insuranceID);
-        Task<InsuranceDTO> RequestInsuranceAsync(RequestInsuraceDTO req);
+        Task<InsuranceDTO> RequestInsuranceFromNewUserAsync(RequestInsuraceDTO req);
     }
 }

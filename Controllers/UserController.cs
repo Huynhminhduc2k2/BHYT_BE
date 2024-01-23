@@ -14,6 +14,8 @@ using BHYT_BE.Controllers.Types;
 using AutoMapper;
 using BHYT_BE.Common.AppSetting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Runtime.CompilerServices;
+using System;
 
 namespace BHYT_BE.Controllers
 {
@@ -418,6 +420,58 @@ try
             // You can add additional logic here, such as blacklisting the token, storing it in a database, etc.
 
             return Ok("Logout successful");
+        }
+
+        [HttpPost("ForgotPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPasswordRequest([FromBody] string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return NotFound("Not found user with email");
+                }
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action("ResetPassword", "User", new { token, email }, protocol: HttpContext.Request.Scheme);
+                await _emailAdapter.SendEmailAsync(email, "Reset Password", $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>", true);
+                return Ok("Please check your email to reset password");
+            }
+            catch (Exception)
+            {
+                // Token validation failed, the token is already invalidated
+                return BadRequest("Token is already invalidated");
+            }
+        }
+        [HttpPost("ResetPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] string password, string confirmPassword, string token, string email)
+        {
+            try
+            {
+                if (!password.Equals(confirmPassword))
+                {
+                    return BadRequest("Password and ConfirmPassword are not the same");
+                }
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return NotFound("Not found user with email");
+                }
+                var result = await _userManager.ResetPasswordAsync(user, token, password);
+                if (result.Succeeded)
+                {
+                    return BadRequest($"Reset password failed, err={result.Errors}");
+                }
+                return Ok("Reset password ok!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+
+            }
         }
     }
 }

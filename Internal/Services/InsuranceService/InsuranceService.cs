@@ -257,7 +257,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 return new string(chars);
             }
         }
-        public async Task<InsuranceDTO> RequestInsuranceAsync(RequestInsuraceDTO req)
+        public async Task<InsuranceDTO> RequestInsuranceFromNewUserAsync(RequestInsuraceDTO req)
         {
             var password = GenerateRandomPassword(8);
             

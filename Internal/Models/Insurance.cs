@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
+using System.Net.Mail;
 
 namespace BHYT_BE.Internal.Models
 {
@@ -126,6 +127,7 @@ namespace BHYT_BE.Internal.Models
         [MaxLength(255)]
         public string? RejectionReason { get; set; }
     }
+    [Index(nameof(InsuranceRequestID), IsUnique = true)]
     public class InsuranceRequestPayment : BaseEntity
     {
         [Key]
