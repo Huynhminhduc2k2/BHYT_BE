@@ -35,7 +35,7 @@ jobs:
       run: mkdir -p ./BHYT_BE.Test/coverage
     - name: Test with Code Coverage
       run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory ./BHYT_BE.Test/coverage
-      working-directory: ./BHYT_BE.Tes
+      working-directory: ./BHYT_BE.Test
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
