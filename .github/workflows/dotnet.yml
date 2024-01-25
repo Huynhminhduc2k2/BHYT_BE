@@ -37,7 +37,7 @@ jobs:
       run: mkdir -p ./BHYT_BE.Test/coverage
 
     - name: Test with Code Coverage
-      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory ./BHYT_BE.Test/coverage
+      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory ./coverage
       working-directory: ./BHYT_BE.Test
 
     - name: Code Coverage Report
