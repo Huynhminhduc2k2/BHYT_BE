@@ -29,7 +29,7 @@ jobs:
       
       # Add coverlet.collector nuget package to test project - 'dotnet add <TestProject.cspoj> package coverlet
     - name: Test
-      run: dotnet test --no-build --verbosity
+      run: dotnet test --no-build --verbosity normal
       working-directory: ./BHYT_BE.Test  # Specify the correct path to your test project
       
     - name: Test with Code Coverage
