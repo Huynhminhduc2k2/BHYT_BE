@@ -200,44 +200,44 @@ namespace BHYT_BE.Controllers
 
 
         [Authorize]
-        [HttpGet("GetCurrentUser")]
-        public async Task<IActionResult> GetCurrentUser()
-        {
-            try
+            [HttpGet("GetCurrentUser")]
+            public async Task<IActionResult> GetCurrentUser()
             {
-                // Lấy thông tin người dùng từ Claims
-                var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                _logger.LogInformation(userId);
-                if (userId == null)
+                try
                 {
-                    _logger.LogError("user id is null");
-                    return NotFound("user id is empty");
-                }
+                    // Lấy thông tin người dùng từ Claims
+                    var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    _logger.LogInformation(userId);
+                    if (userId == null)
+                    {
+                        _logger.LogError("user id is null");
+                        return NotFound("user id is empty");
+                    }
 
-                // Tìm người dùng theo ID
-                var user = await _userManager.FindByIdAsync(userId);
-                var role = await _userManager.GetRolesAsync(user);
-                if (user == null)
-                {
-                    _logger.LogError("User not found");
-                    return NotFound("User not found");
-                }
+                    // Tìm người dùng theo ID
+                    var user = await _userManager.FindByIdAsync(userId);
+                    var role = await _userManager.GetRolesAsync(user);
+                    if (user == null)
+                    {
+                        _logger.LogError("User not found");
+                        return NotFound("User not found");
+                    }
 
-                // Trả về thông tin người dùng
-                return Ok(new
+                    // Trả về thông tin người dùng
+                    return Ok(new
+                    {
+                        user.UserName,
+                        user.Email,
+                        user.FullName,
+                        role
+                        // Thêm các thông tin khác của người dùng nếu cần
+                    });
+                }
+                catch (Exception ex)
                 {
-                    user.UserName,
-                    user.Email,
-                    user.FullName,
-                    role
-                    // Thêm các thông tin khác của người dùng nếu cần
-                });
+                    return StatusCode(500, ex.Message);
+                }
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
 
         // API để cập nhật thông tin của một user
         [HttpPut("{id}")]
