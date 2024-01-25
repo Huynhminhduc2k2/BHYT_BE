@@ -34,9 +34,9 @@ jobs:
     - name: Generate Code Coverage Summary
       run: |
         echo "Listing coverage directory contents:"
-        ls -R ./coverage
+        ls -R ./BHYT_BE.Test/coverage
         echo "Running CodeCoverageSummary"
-        docker run --rm -v $PWD:/github/workspace ghcr.io/irongut/codecoveragesummary:v1.3.0 --files "coverage/*/coverage.cobertura.xml" --badge true --fail false --format markdown --hidebranch false --hidecomplexity false --indicators true --output both --thresholds "50 75"
+        docker run --rm -v $PWD/BHYT_BE.Test:/github/workspace ghcr.io/irongut/codecoveragesummary:v1.3.0 --files "coverage/*/coverage.cobertura.xml" --badge true --fail false --format markdown --hidebranch false --hidecomplexity false --indicators true --output both --thresholds "50 75"
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
       if: github.event_name == 'pull_request'
