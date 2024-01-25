@@ -10,10 +10,11 @@ namespace BHYT_BE.Internal.Services.MapperService
     {
         public InsuranceMapperService()
         {
-            CreateMap<Insurance, InsuranceDTO>();
+            CreateMap<Insurance, InsuranceDTO>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.InsuranceType))
+                .ReverseMap();
             CreateMap<InsuranceHistory, InsuranceHistoryDTO>();
             CreateMap<InsurancePaymentHistory, InsurancePaymentHistoryDTO>();
-
 
             CreateMap<InsuranceDTO, InsuranceResponse>()
                 .ForMember(dest => dest.Type, opt => opt.ToString());

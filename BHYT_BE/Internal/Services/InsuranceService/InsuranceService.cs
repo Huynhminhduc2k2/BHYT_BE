@@ -64,7 +64,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                     return false;
                 }
                 insurance.Status = InsuranceStatus.ACCEPTED;
-                insurance = _insuranceRepo.Update(insurance);
+                insurance = _insuranceRepo.UpdateAsync(insurance).Result;
 
                 return true;
             }
@@ -96,11 +96,12 @@ namespace BHYT_BE.Internal.Services.InsuranceService
 
                 insurance = _insuranceRepo.Create(insurance);
 
-                UpdateInsurance(new InsuranceDTO
+                await UpdateInsurance(new InsuranceDTO
                 {
                     InsuranceID = insurance.InsuranceID,
                     Status = InsuranceStatus.WAITING_PAYMENT,
-                }, true, "");
+                    UserID = "",
+                }, true, null);
                 var insuranceDTO = _mapper.Map<InsuranceDTO>(insurance);
                 // Additional logic if needed
                 return insuranceDTO;
@@ -127,7 +128,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                     return false;
                 }
                 insurance.Status = InsuranceStatus.REJECTED;
-                insurance = _insuranceRepo.Update(insurance);
+                insurance = _insuranceRepo.UpdateAsync(insurance).Result;
 
                 return true;
             }
@@ -144,14 +145,13 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             List<InsuranceDTO> insuranceDTOs;
             if (string.IsNullOrEmpty(userID))
             {
-                insurances = await _insuranceRepo.GetAll();
-                insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
-                return insuranceDTOs;
+                insurances = await _insuranceRepo.GetAll();   
+            } 
+            else
+            {
+                _ = await _userManager.FindByIdAsync(userID) ?? throw new ValidationException("Not found user");
+                insurances = await _insuranceRepo.GetInsuranceByUserID(userID);
             }
-
-            var _ = await _userManager.FindByIdAsync(userID) ?? throw new ValidationException("Not found user");
-
-            insurances = await _insuranceRepo.GetInsuranceByUserID(userID);
             insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
             return insuranceDTOs;
         }
@@ -188,56 +188,67 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             };
         }
 
-        public void UpdateInsurance(InsuranceDTO req, bool isAdmin, string userId)
+        public async Task UpdateInsurance(InsuranceDTO req, bool isAdmin, string? userId)
         {
             try
             {
                 Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID).Result;
                 InsuranceStatus currentStatus = insurance.Status;
-                if (currentStatus == InsuranceStatus.REJECTED || currentStatus == InsuranceStatus.ACCEPTED)
+                InsuranceType currentType = insurance.InsuranceType;
+                User updateUser = null;
+                if (!string.IsNullOrEmpty(req.UserID))
                 {
-                    throw new ValidationException("Insurance status is not pending");
-
-                    User updateUser = null;
-                    if (req.UserID != "")
-                    {
-                        updateUser = _userManager.FindByIdAsync(req.UserID).Result ?? throw new ValidationException("User not found"); ;
-                    }
-                    User user = _userManager.FindByIdAsync(userId).Result ?? throw new UnauthorizedAccessException("Unauthorization");
-                    insurance.InsuranceType = req.Type;
-                    if (isAdmin)
-                    {
-                        if (updateUser != null)
-                        {
-                            insurance.UserID = req.UserID;
-                        }
-                        insurance.UpdatedBy = user.UserName;
-                        insurance.Status = req.Status;
-                        _insuranceRepo.Update(insurance);
-                        if (req.Status != currentStatus)
-                        {
-                            _insuranceHistoryRepo.Create(new InsuranceHistory
-                            {
-                                InsuranceID = insurance.InsuranceID,
-                                OldStatus = currentStatus,
-                                NewStatus = insurance.Status,
-                                Remark = "admin update status",
-                                Email = user.UserName,
-                                CreatedBy = user.UserName,
-                                UpdatedBy = user.UserName,
-                            });
-                        }
-
-                    }
-                    else
-                    {
-                        insurance.UpdatedBy = user.Email;
-                        _insuranceRepo.Update(insurance);
-                    }
-
-                    // Additional logic if needed
-                    _logger.LogInformation("Insurance created successfully");
+                    updateUser = await _userManager.FindByIdAsync(req.UserID) ?? throw new ValidationException("User not found"); ;
                 }
+                User user = new User
+                {
+                    UserName = _appSettings.SystemEmail,
+                };
+                if (userId != null)
+                {
+                    user = await _userManager.FindByIdAsync(userId) ?? throw new UnauthorizedAccessException("Unauthorization");
+                }
+                insurance.InsuranceType = req.Type;
+                if (req.Type != currentType && (insurance.Status == InsuranceStatus.PAID 
+                    || insurance.Status == InsuranceStatus.PENDING
+                    || insurance.Status == InsuranceStatus.REJECTED
+                    || insurance.Status == InsuranceStatus.ACCEPTED))
+                {
+                    insurance.PremiumAmount = new InsurancePrice(req.Type).Price - insurance.PremiumAmount;
+                    insurance.Status = InsuranceStatus.WAITING_PAYMENT;
+                }
+                if (isAdmin)
+                {
+                    if (updateUser != null)
+                    {
+                        insurance.UserID = req.UserID;
+                    }
+                    insurance.UpdatedBy = user.UserName;
+                    insurance.Status = req.Status;
+                    await _insuranceRepo.UpdateAsync(insurance);
+
+                }
+                else
+                {
+                    insurance.UpdatedBy = user.Email;
+                    var result = await _insuranceRepo.UpdateAsync(insurance);
+                    
+                }
+                if (req.Status != currentStatus)
+                {
+                    _insuranceHistoryRepo.Create(new InsuranceHistory
+                    {
+                        InsuranceID = insurance.InsuranceID,
+                        OldStatus = currentStatus,
+                        NewStatus = insurance.Status,
+                        Remark = "admin update status",
+                        Email = user.UserName,
+                        CreatedBy = user.UserName,
+                        UpdatedBy = user.UserName,
+                    });
+                }
+                // Additional logic if needed
+                _logger.LogInformation("Insurance created successfully");
             }
             catch (Exception ex)
             {

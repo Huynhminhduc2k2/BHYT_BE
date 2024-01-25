@@ -37,13 +37,14 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
             return await _context.Insurances.Where(insurance => insurance.UserID == userID).ToListAsync();
         }
 
-        public Insurance Update(Insurance insurance)
+        public async Task<Insurance> UpdateAsync(Insurance insurance)
         {
             try
             {
-                var result = _context.Insurances.Update(insurance);
-                _context.SaveChanges();
-                return result.Entity;
+                _context.Entry(insurance).State = EntityState.Modified;
+                _context.Insurances.Update(insurance);
+                await _context.SaveChangesAsync();
+                return insurance;
             } 
             catch (Exception ex)
             {

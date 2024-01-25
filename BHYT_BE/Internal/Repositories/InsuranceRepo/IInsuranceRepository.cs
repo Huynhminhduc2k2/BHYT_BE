@@ -8,7 +8,7 @@ namespace BHYT_BE.Internal.Repository.InsuranceRepo
         public Task<List<Insurance>> GetAll();
         public Task<Insurance> GetByID(int id);
         public Insurance Create(Insurance insurance);
-        public Insurance Update(Insurance insurance);
+        public Task<Insurance> UpdateAsync(Insurance insurance);
         Task<List<Insurance>> GetInsuranceByUserID(string userID);
     }
 }

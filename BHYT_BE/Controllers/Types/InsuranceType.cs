@@ -41,10 +41,14 @@ namespace BHYT_BE.Controllers.Types
     }
     public class EditInsuranceRequest
     {
+        [Required(ErrorMessage = "InsuranceID là bắt buộc")]
         public int InsuranceID { get; set; }
+        [Required(ErrorMessage = "UserID là bắt buộc")]
         public string UserID { get; set; }
-        public string InsuranceType { get; set; }
-        public string Status { get; set; }
+        [Required(ErrorMessage = "InsuranceType là bắt buộc")]
+        public string? InsuranceType { get; set; }
+        [Required(ErrorMessage = "Status là bắt buộc")]
+        public string? Status { get; set; }
     }
     public class InsuranceResponse
     {

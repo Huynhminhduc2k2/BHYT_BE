@@ -3,7 +3,7 @@
     public interface IInsuranceService
     {
         Task<InsuranceDTO> AddInsurance(RegisterInsuraceDTO req);
-        void UpdateInsurance(InsuranceDTO insuranceDTO, bool isAdmin, string userId);
+        Task UpdateInsurance(InsuranceDTO insuranceDTO, bool isAdmin, string userId);
         Task<List<InsuranceDTO>> GetAllInsurancesByUserAsync(string? userID);
         Task<List<InsuranceDTO>> GetAllInsurancesAsync(string? userID);
 

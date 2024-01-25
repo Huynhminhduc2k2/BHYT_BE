@@ -5,6 +5,7 @@ using BHYT_BE.Internal.Services.InsuranceService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
@@ -111,23 +112,6 @@ namespace BHYT_BE.Controllers
                 var insuranceResponse = _mapper.Map<InsuranceResponse>(insuranceDetailtDTO.Insurance);
                 var insuranceHistoryResponse = _mapper.Map<List<InsuranceHistoryResponse>>(insuranceDetailtDTO.History);
                 var insurancePaymentHistoryResponse = _mapper.Map<List<InsurancePaymentHistoryResponse>>(insuranceDetailtDTO.PaymentHistory);
-
-                //var insuranceResponse = new InsuranceResponse
-                //{
-                //    InsuranceID = insuranceDTOs.InsuranceID,
-                //    UserID = insuranceDTOs.UserID,
-                //    Type = insuranceDTOs.Type.ToString(),
-                //    Status = insuranceDTOs.Status.ToString(),
-                //    EndDate = insuranceDTOs.EndDate,
-                //    IsAutoRenewal = insuranceDTOs.IsAutoRenewal,
-                //    LastPaymentDate = insuranceDTOs.LastPaymentDate,
-                //    PremiumAmount = insuranceDTOs.PremiumAmount,
-                //    StartDate = insuranceDTOs.StartDate,
-                //    CreatedBy = insuranceDTOs.CreatedBy,
-                //    UpdatedBy = insuranceDTOs.UpdatedBy,
-                //    CreatedAt = insuranceDTOs.CreatedAt,
-                //    UpdatedAt = insuranceDTOs.UpdatedAt,
-                //};
                 var insuranceDetailResponse = new InsuranceDetailResponse
                 {
                     InsuranceResp = insuranceResponse,
@@ -231,7 +215,8 @@ namespace BHYT_BE.Controllers
 
         [HttpPost("edit")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public IActionResult EditRegisterInsurance([FromBody] EditInsuranceRequest req)
+        [AllowAnonymous]
+        public async Task<IActionResult> EditRegisterInsuranceAsync([FromBody] EditInsuranceRequest req)
         {
             try
             {
@@ -261,7 +246,7 @@ namespace BHYT_BE.Controllers
                 {
                     isAdmin = true;
                 }
-                _service.UpdateInsurance(new InsuranceDTO
+                await _service.UpdateInsurance(new InsuranceDTO
                 {
                     InsuranceID = req.InsuranceID,
                     UserID = req.UserID,
