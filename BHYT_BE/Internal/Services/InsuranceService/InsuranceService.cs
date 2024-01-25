@@ -100,6 +100,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 {
                     InsuranceID = insurance.InsuranceID,
                     Status = InsuranceStatus.WAITING_PAYMENT,
+                    Type = insurance.InsuranceType,
                     UserID = "",
                 }, true, null);
                 var insuranceDTO = _mapper.Map<InsuranceDTO>(insurance);
@@ -195,6 +196,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                 Insurance insurance = _insuranceRepo.GetByID(req.InsuranceID).Result;
                 InsuranceStatus currentStatus = insurance.Status;
                 InsuranceType currentType = insurance.InsuranceType;
+                decimal currentPrice = insurance.PremiumAmount;
                 User updateUser = null;
                 if (!string.IsNullOrEmpty(req.UserID))
                 {
@@ -209,12 +211,16 @@ namespace BHYT_BE.Internal.Services.InsuranceService
                     user = await _userManager.FindByIdAsync(userId) ?? throw new UnauthorizedAccessException("Unauthorization");
                 }
                 insurance.InsuranceType = req.Type;
+                if (req.Type != currentType)
+                {
+                    insurance.PremiumAmount = new InsurancePrice(req.Type).Price;
+                }
                 if (req.Type != currentType && (insurance.Status == InsuranceStatus.PAID 
                     || insurance.Status == InsuranceStatus.PENDING
                     || insurance.Status == InsuranceStatus.REJECTED
                     || insurance.Status == InsuranceStatus.ACCEPTED))
                 {
-                    insurance.PremiumAmount = new InsurancePrice(req.Type).Price - insurance.PremiumAmount;
+                    insurance.PremiumAmount = new InsurancePrice(req.Type).Price - currentPrice;
                     insurance.Status = InsuranceStatus.WAITING_PAYMENT;
                 }
                 if (isAdmin)
