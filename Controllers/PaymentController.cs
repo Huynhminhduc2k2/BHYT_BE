@@ -86,17 +86,56 @@ namespace BHYT_BE.Controllers
                 SuccessUrl = domain + "/subscription.html",
                 CancelUrl = domain + "/subscription.html",
             };
+
             var service = new SessionService();
             Session session = service.Create(option);
+         
             Response.Headers.Add("Location", session.Url);
             return new StatusCodeResult(303);
         }
-        [HttpGet("GetSubscription/{customerId}")]
-        public IActionResult GetSubscription(string customerId)
+        [HttpGet("GetCustomerId")]
+        public IActionResult GetCustomerId(string email)
         {
+            try
+            {
+                var options = new CustomerListOptions
+                {
+                    Email = email,
+                    Limit = 1,
+                };
+                var service = new CustomerService();
+                var customers = service.List(options);
+                if (customers.Data.Count > 0)
+                {
+                    return Ok(new { CustomerId = customers.Data[0].Id });
+                }
+                return NotFound();
+
+            }
+            catch (StripeException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+        [HttpGet("GetSubscription")]
+        public IActionResult GetSubscription(string email)
+        {
+            string CustomerId = "";
+            var Customeroptions = new CustomerListOptions
+            {
+                Email = email,
+                Limit = 1,
+            };
+            var service = new CustomerService();
+            var customers = service.List(Customeroptions);
+            if (customers.Data.Count > 0)
+            {
+                CustomerId = customers.Data[0].Id ;
+            }
+            
             var options = new SubscriptionListOptions
             {
-                Customer = customerId,
+                Customer = CustomerId,
                 Status = "all" 
             };
 
