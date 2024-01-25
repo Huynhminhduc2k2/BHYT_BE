@@ -83,8 +83,8 @@ namespace BHYT_BE.Controllers
                     },
                 },
                 Mode = "subscription",
-                SuccessUrl = domain + "/subscription.html",
-                CancelUrl = domain + "/subscription.html",
+                SuccessUrl = domain + "/home",
+                CancelUrl = domain + "/subscription",
             };
 
             var service = new SessionService();
@@ -121,47 +121,85 @@ namespace BHYT_BE.Controllers
         public IActionResult GetSubscription(string email)
         {
             string CustomerId = "";
-            var Customeroptions = new CustomerListOptions
+            var customerOptions = new CustomerListOptions
             {
                 Email = email,
-                Limit = 1,
             };
-            var service = new CustomerService();
-            var customers = service.List(Customeroptions);
+
+            var customerService = new CustomerService();
+            var customers = customerService.List(customerOptions);
+
             if (customers.Data.Count > 0)
             {
-                CustomerId = customers.Data[0].Id ;
-            }
-            
-            var options = new SubscriptionListOptions
-            {
-                Customer = CustomerId,
-                Status = "all" 
-            };
+                var subscriptionDetailsList = new List<object>();
 
-            var subscriptionService = new SubscriptionService();
-            var subscriptions = subscriptionService.List(options);
-
-           
-            if (subscriptions.Data.Count > 0)
-            {
-               
-                var subscriptionDetails = subscriptions.Data.Select(subscription => new
+                foreach (var customer in customers.Data)
                 {
-                    SubscriptionId = subscription.Id,
-                    Status = subscription.Status,
-                    PriceId = subscription.Items.Data[0].Price.Id,
-                    CurrentPeriodStart = subscription.CurrentPeriodStart,
-                    CurrentPeriodEnd = subscription.CurrentPeriodEnd
-                });
+                    var options = new SubscriptionListOptions
+                    {
+                        Customer = customer.Id,
+                    };
 
-                return Ok(subscriptionDetails);
+                    var subscriptionService = new SubscriptionService();
+                    var subscriptions = subscriptionService.List(options);
+
+                    if (subscriptions.Data.Count > 0)
+                    {
+                        var subscriptionDetails = subscriptions.Data.Select(subscription => new
+                        {
+                            SubscriptionId = subscription.Id,
+                            Status = subscription.Status,
+                            Items = subscription.Items.Data.Select(item => new
+                            {
+                                PriceId = item.Price.Id,
+                            }).ToList(),
+                            CurrentPeriodStart = subscription.CurrentPeriodStart,
+                            CurrentPeriodEnd = subscription.CurrentPeriodEnd
+                        }).ToList();
+
+                        subscriptionDetailsList.AddRange(subscriptionDetails);
+                    }
+                }
+
+                if (subscriptionDetailsList.Count > 0)
+                {
+                    return Ok(subscriptionDetailsList);
+                }
+                else
+                {
+                    return NotFound("Customer(s) have no subscriptions.");
+                }
             }
             else
             {
-                return NotFound("Customer has no subscriptions.");
+                return NotFound("Customer not found.");
+            }
+        
+
+        }
+        [HttpPost("CancelSubscription")]
+        public IActionResult CancelSubscription(string subscriptionId)
+        {
+            try
+            {
+                var subscriptionService = new SubscriptionService();
+                var canceledSubscription = subscriptionService.Cancel(subscriptionId);
+
+                // Handle the canceled subscription as needed
+                // For example, you might log the cancellation or perform additional actions
+
+                return Ok("Subscription canceled successfully.");
+            }
+            catch (StripeException stripeException)
+            {
+                // Handle Stripe-specific exceptions
+                return StatusCode((int)stripeException.HttpStatusCode, stripeException.Message);
+            }
+            catch (Exception ex)
+            {
+                // Handle other exceptions
+                return StatusCode(500, ex.Message);
             }
         }
     }
-   
 }
