@@ -134,7 +134,7 @@ namespace BHYT_BE.Controllers
                     InsuranceHistoryResp = insuranceHistoryResponse,
                     InsurancePaymentHistoryResp = insurancePaymentHistoryResponse,
                 };
-                return Ok(insuranceResponse);
+                return Ok(insuranceDetailResponse);
             }
             catch (ValidationException ex)
             {

@@ -142,7 +142,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         {
             List<Insurance> insurances;
             List<InsuranceDTO> insuranceDTOs;
-            if (userID == null)
+            if (string.IsNullOrEmpty(userID))
             {
                 insurances = await _insuranceRepo.GetAll();
                 insuranceDTOs = _mapper.Map<List<InsuranceDTO>>(insurances);
@@ -326,7 +326,7 @@ namespace BHYT_BE.Internal.Services.InsuranceService
 
         public async Task<List<InsuranceDTO>> GetAllInsurancesByUserAsync(string? userID)
         {
-            if (userID == null)
+            if (string.IsNullOrEmpty(userID))
             {
                 throw new UnauthorizedAccessException("Unauthorization");
             }

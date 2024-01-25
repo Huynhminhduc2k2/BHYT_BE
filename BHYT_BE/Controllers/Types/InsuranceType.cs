@@ -67,8 +67,8 @@ namespace BHYT_BE.Controllers.Types
     {
         public int InsuranceHistoryID { get; set; }
         public int InsuranceID { get; set; }
-        public InsuranceStatus OldStatus { get; set; }
-        public InsuranceStatus NewStatus { get; set; }
+        public string OldStatus { get; set; }
+        public string NewStatus { get; set; }
         public string? Remark { get; set; }
         public string? Email { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -82,7 +82,7 @@ namespace BHYT_BE.Controllers.Types
         public int InsuranceID { get; set; } // Khóa ngoại liên kết với Insurance
         public decimal AmountPaid { get; set; } // Số tiền đã thanh toán
         public DateTime PaymentDate { get; set; } // Ngày thanh toán
-        public InsurancePaymentMethod PaymentMethod { get; set; } // Phương thức thanh toán (chuyển khoản, thẻ tín dụng, ...)
+        public string PaymentMethod { get; set; } // Phương thức thanh toán (chuyển khoản, thẻ tín dụng, ...)
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
