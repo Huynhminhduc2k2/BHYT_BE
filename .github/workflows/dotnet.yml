@@ -34,10 +34,8 @@ jobs:
     - name: Create Coverage Directory
       run: mkdir -p ./BHYT_BE.Test/coverage
     - name: Test with Code Coverage
-      run: |
-        dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory coverage
-        ls -R ./BHYT_BE.Test  # Add this line to list contents of the working directory
-      working-directory: ./BHYT_BE.Test
+      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory ./BHYT_BE.Test/coverage
+      working-directory: ./BHYT_BE.Tes
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
