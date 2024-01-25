@@ -199,7 +199,7 @@ namespace BHYT_BE.Controllers
 
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public IActionResult RegisterInsurance([FromBody] RegisterInsurance req)
+        public async Task<IActionResult> RegisterInsuranceAsync([FromBody] RegisterInsurance req)
         {
             try
             {
@@ -211,7 +211,7 @@ namespace BHYT_BE.Controllers
                     return BadRequest("Invalid insurance type");
                 }
                 var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                _service.AddInsurance(new RegisterInsuraceDTO
+                _ = await _service.AddInsurance(new RegisterInsuraceDTO
                 {
                     UserID = userId,
                     Type = insuranceType,
