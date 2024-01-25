@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BHYT_BE.Controllers.Types
 {
-    public class RequestInsurance
+    public class RequestRegisterInsurance
     {
         [Required(ErrorMessage = "Họ và tên là bắt buộc")]
         public string FullName { get; set; }
