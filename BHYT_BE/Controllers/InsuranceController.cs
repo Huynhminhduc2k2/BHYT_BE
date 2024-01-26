@@ -32,22 +32,7 @@ namespace BHYT_BE.Controllers
             try
             {
                 var insuranceDTOs = await _service.GetAllInsurancesAsync(userId);
-                var insuranceResponse = insuranceDTOs.Select(insurance => new InsuranceResponse
-                {
-                    InsuranceID = insurance.InsuranceID,
-                    UserID = insurance.UserID,
-                    Type = insurance.Type.ToString(),
-                    Status = insurance.Status.ToString(),
-                    EndDate = insurance.EndDate,
-                    IsAutoRenewal = insurance.IsAutoRenewal,
-                    LastPaymentDate = insurance.LastPaymentDate,
-                    PremiumAmount = insurance.PremiumAmount,
-                    StartDate = insurance.StartDate,
-                    CreatedBy = insurance.CreatedBy,
-                    UpdatedBy = insurance.UpdatedBy,
-                    CreatedAt = insurance.CreatedAt,
-                    UpdatedAt = insurance.UpdatedAt,
-                });
+                var insuranceResponse = _mapper.Map<List<InsuranceResponse>>(insuranceDTOs);
                 return Ok(insuranceResponse);
             }
             catch (UnauthorizedAccessException ex)
@@ -72,22 +57,7 @@ namespace BHYT_BE.Controllers
                 var userID = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var insuranceDTOs = await _service.GetAllInsurancesByUserAsync(userID);
                 _logger.LogInformation("Insurance: {Insurance}", insuranceDTOs);
-                var insuranceResponse = insuranceDTOs.Select(insurance => new InsuranceResponse
-                {
-                    InsuranceID = insurance.InsuranceID,
-                    UserID = insurance.UserID,
-                    Type = insurance.Type.ToString(),
-                    Status = insurance.Status.ToString(),
-                    EndDate = insurance.EndDate,
-                    IsAutoRenewal = insurance.IsAutoRenewal,
-                    LastPaymentDate = insurance.LastPaymentDate,
-                    PremiumAmount = insurance.PremiumAmount,
-                    StartDate = insurance.StartDate,
-                    CreatedBy = insurance.CreatedBy,
-                    UpdatedBy = insurance.UpdatedBy,
-                    CreatedAt = insurance.CreatedAt,
-                    UpdatedAt = insurance.UpdatedAt,
-                });
+                var insuranceResponse = _mapper.Map<List<InsuranceResponse>>(insuranceDTOs);
                 return Ok(insuranceResponse);
             }
             catch (UnauthorizedAccessException ex)

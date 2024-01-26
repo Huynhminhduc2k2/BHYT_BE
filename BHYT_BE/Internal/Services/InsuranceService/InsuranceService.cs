@@ -27,6 +27,14 @@ namespace BHYT_BE.Internal.Services.InsuranceService
         private readonly IInsurancePaymenHistoryRepository _insurancePaymentHistoryRepo;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IMapper _mapper;
+        private AppSettings object1;
+        private IEmailAdapter object2;
+        private IMapper object3;
+        private UserManager<User> object4;
+        private RoleManager<IdentityRole> object5;
+        private IInsuranceHistoryRepository object6;
+        private IInsurancePaymenHistoryRepository object7;
+        private ILogger<InsuranceService> object8;
 
         public InsuranceService(
             AppSettings appSettings,
@@ -48,6 +56,18 @@ namespace BHYT_BE.Internal.Services.InsuranceService
             _insuranceRepo = insuranceRepo;
             _logger = logger;
             _mapper = mapper;
+        }
+
+        public InsuranceService(AppSettings object1, IEmailAdapter object2, IMapper object3, UserManager<User> object4, RoleManager<IdentityRole> object5, IInsuranceHistoryRepository object6, IInsurancePaymenHistoryRepository object7, ILogger<InsuranceService> object8)
+        {
+            this.object1 = object1;
+            this.object2 = object2;
+            this.object3 = object3;
+            this.object4 = object4;
+            this.object5 = object5;
+            this.object6 = object6;
+            this.object7 = object7;
+            this.object8 = object8;
         }
 
         public bool AcceptInsurance(int insuranceID)
