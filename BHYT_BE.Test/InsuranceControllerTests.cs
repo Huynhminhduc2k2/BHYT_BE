@@ -192,7 +192,7 @@ namespace BHYT_BE.Test
         {
             var result = await _controller.GetAllInsurance(null);
             // Assert
-            Assert.IsType<ObjectResult>(result);
+            Assert.IsType<OkObjectResult>(result);
         }
 
         [Fact]

@@ -118,7 +118,7 @@ namespace BHYT_BE.Controllers
                     Roles = req.Roles,
                 }, otp); ;
 
-                if (result.Succeeded)
+                if (result != null && result.Succeeded)
                 {
                     await _emailAdapter.SendEmailAsync(req.Email, "Verification OTP", $"Your OTP is: {otp}", false);
                     _memoryCache.Set(req.Email, otp);

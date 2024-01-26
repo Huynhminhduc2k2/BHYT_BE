@@ -1,10 +1,9 @@
 ﻿using BHYT_BE.Internal.Repositories.UserRepo;
-using System.Net.WebSockets;
 using User = BHYT_BE.Internal.Models.User;
-using BHYT_BE.Internal.Services.UserService;
 using Microsoft.AspNetCore.Identity;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore; // Thêm namespace này
+using Microsoft.EntityFrameworkCore;
+
 
 namespace BHYT_BE.Internal.Services.UserService
 {
@@ -24,14 +23,18 @@ namespace BHYT_BE.Internal.Services.UserService
 
         public async Task<List<UserDTO>> GetAllUsersAsync()
         {
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userRepo.GetAll();
+
             List<UserDTO> userDTOs = new List<UserDTO>();
+
             foreach (var user in users)
             {
                 var userDTO = _mapper.Map<UserDTO>(user);
-                userDTO.Roles = (List<string>)await _userManager.GetRolesAsync(user);
+                var rolesList = await _userManager.GetRolesAsync(user);
+                userDTO.Roles = rolesList.Cast<string>().ToList();
                 userDTOs.Add(userDTO);
             }
+
             return userDTOs;
         }
 
@@ -76,7 +79,7 @@ namespace BHYT_BE.Internal.Services.UserService
                 OTP = otp,
             };
             var createUserResult = await _userManager.CreateAsync(user, req.Password); 
-            if (!createUserResult.Succeeded)
+            if (createUserResult != null && !createUserResult.Succeeded)
             {
                 return createUserResult;
 
