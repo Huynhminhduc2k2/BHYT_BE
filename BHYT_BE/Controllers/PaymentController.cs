@@ -29,8 +29,8 @@ namespace BHYT_BE.Controllers
                     },
                 },
                 Mode = "subscription",
-                SuccessUrl = domain + "/subscription.html",
-                CancelUrl = domain + "/subscription.html",
+                SuccessUrl = domain + "/thankyou",
+                CancelUrl = domain + "/subscription",
             };
             var service = new SessionService();
             Session session = service.Create(option);
@@ -117,6 +117,14 @@ namespace BHYT_BE.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
+        private async Task<string> GetProductNameAsync(string productId)
+        {
+            var productService = new ProductService();
+            var product = await productService.GetAsync(productId);
+
+            return product?.Name ?? "Unknown Product";
+        }
         [HttpGet("GetSubscription")]
         public IActionResult GetSubscription(string email)
         {
@@ -148,10 +156,13 @@ namespace BHYT_BE.Controllers
                         var subscriptionDetails = subscriptions.Data.Select(subscription => new
                         {
                             SubscriptionId = subscription.Id,
+
                             Status = subscription.Status,
-                            Items = subscription.Items.Data.Select(item => new
+                            Items = subscription.Items.Data.Select(async  item => new
                             {
                                 PriceId = item.Price.Id,
+                                SubscriptionName = await GetProductNameAsync(item.Price.ProductId)
+
                             }).ToList(),
                             CurrentPeriodStart = subscription.CurrentPeriodStart,
                             CurrentPeriodEnd = subscription.CurrentPeriodEnd
@@ -177,6 +188,7 @@ namespace BHYT_BE.Controllers
         
 
         }
+      
         [HttpPost("CancelSubscription")]
         public IActionResult CancelSubscription(string subscriptionId)
         {
